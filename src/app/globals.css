@@ -1,25 +1,30 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
-@theme {
-  --color-stone-warm: #faf9f6;
-  --color-brand-black: #1c1917;
-  --color-brand-muted: #78716c;
-  --color-brand-accent: #c4956a;
-  --color-brand-pewter: #a8a29e;
-  --color-brand-ash: #e5e2de;
-  --color-brand-light: #f5f4f0;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-pm-bg text-pm-text antialiased;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
 }
 
-body {
-  font-family: var(--font-body);
-  background: linear-gradient(180deg, #faf9f6 0%, #f5f4f0 100%);
-  color: var(--color-brand-black);
-  -webkit-font-smoothing: antialiased;
-}
-
-::selection {
-  background-color: rgba(196, 149, 106, 0.2);
+@layer components {
+  .label-caps {
+    @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-pm-accent;
+  }
+  .card {
+    @apply rounded-2xl border border-pm-border/60 bg-pm-bg-card p-6 transition-all duration-200 hover:bg-pm-bg-hover;
+  }
+  .btn-primary {
+    @apply rounded-full bg-pm-text text-pm-bg px-6 py-3 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply rounded-full border border-pm-border px-6 py-3 text-sm font-medium text-pm-muted transition-all hover:bg-pm-bg-card hover:border-pm-text/20;
+  }
 }
