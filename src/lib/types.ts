@@ -26,3 +26,21 @@ export type Listing = {
   created_at: string;
   updated_at: string;
 };
+
+export type GearProduct = {
+  name: string;
+  brand: string;
+  price: string;
+  amazonUrl: string;
+  verdict: string;
+  bestFor: string;
+};
+
+export type GearItem = {
+  slug: string;
+  title: string;
+  category: "rackets" | "shoes" | "balls" | "bags";
+  headline: string;
+  intro: string;
+  products: GearProduct[];
+};
