@@ -21,7 +21,7 @@ export default async function GearPage({ params }: Props) {
       </section>
       <section className="mb-10 max-w-2xl"><p className="text-sm leading-relaxed text-pm-muted">{gear.intro}</p></section>
       <div className="space-y-4">
-        {gear.products.map((product, i) => (
+        {gear.products.map((product: any, i: number) => (
           <div key={product.name} className="rounded-2xl border border-pm-border/60 bg-pm-bg-card p-6 md:p-8">
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
