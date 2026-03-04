@@ -2,26 +2,28 @@ import type { Config } from "tailwindcss";
 
 export default {
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        pm: {
-          bg: "#faf9f6",
-          "bg-card": "#fafaf9",
-          "bg-hover": "#f5f5f4",
-          text: "#1c1917",
+        stone: {
+          warm: "#faf9f6",
+        },
+        brand: {
+          black: "#1c1917",
           muted: "#78716c",
-          faint: "#a8a29e",
           accent: "#c4956a",
-          border: "#e5e2de",
-          ash: "#d6d3d1",
+          pewter: "#a8a29e",
+          ash: "#e5e2de",
+          light: "#f5f4f0",
         },
       },
       fontFamily: {
-        serif: ['"Playfair Display"', "Georgia", "serif"],
-        sans: ['"DM Sans"', "system-ui", "sans-serif"],
+        display: ['"Playfair Display"', "Georgia", "serif"],
+        body: ['"DM Sans"', "system-ui", "sans-serif"],
       },
     },
   },

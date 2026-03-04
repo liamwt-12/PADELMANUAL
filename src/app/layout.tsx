@@ -7,37 +7,28 @@ export const metadata: Metadata = {
     template: "%s | Padel Manual",
   },
   description:
-    "Play better. Find better. Buy better. Curated courts, coaches, leagues, and gear for UK padel players.",
+    "Courts, coaches, gear, and leagues for UK padel players. Curated, not cluttered.",
   metadataBase: new URL("https://padelmanual.com"),
-  openGraph: {
-    siteName: "Padel Manual",
-    type: "website",
-    locale: "en_GB",
-  },
+  openGraph: { siteName: "Padel Manual", type: "website", locale: "en_GB" },
 };
 
 function Nav() {
   return (
     <header className="flex items-center justify-between py-8">
       <a href="/" className="flex items-baseline gap-1.5">
-        <span className="font-display text-xl font-bold tracking-tight text-brand-black">
-          Padel
-        </span>
-        <span className="font-body text-[13px] tracking-[0.12em] uppercase text-brand-pewter">
-          Manual
-        </span>
+        <span className="font-serif text-xl font-bold tracking-tight text-pm-text">Padel</span>
+        <span className="text-[11px] tracking-[0.12em] uppercase text-pm-faint">Manual</span>
       </a>
       <nav className="flex gap-7 items-center">
         {[
           { label: "London", href: "/london" },
           { label: "Gear", href: "/gear" },
-          { label: "Partner", href: "/partner" },
-          { label: "Weekly Note", href: "/weekly" },
+          { label: "Weekly", href: "/weekly" },
         ].map((link) => (
           <a
             key={link.href}
             href={link.href}
-            className="font-body text-[13px] font-medium text-brand-muted hover:text-brand-black transition-colors tracking-wide"
+            className="text-[13px] font-medium text-pm-muted hover:text-pm-text transition-colors"
           >
             {link.label}
           </a>
@@ -49,75 +40,46 @@ function Nav() {
 
 function Footer() {
   return (
-    <footer className="py-12 mt-16">
-      <div className="border-t border-brand-ash pt-8">
-        <div className="flex justify-between items-start flex-wrap gap-8">
+    <footer className="py-12 mt-16 border-t border-pm-border/40">
+      <div className="flex justify-between items-start flex-wrap gap-8">
+        <div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-serif text-base font-bold text-pm-text">Padel</span>
+            <span className="text-[10px] tracking-[0.12em] uppercase text-pm-faint">Manual</span>
+          </div>
+          <p className="text-xs text-pm-faint mt-2 max-w-[280px] leading-relaxed">
+            Independent. Curated. For players, not algorithms.
+          </p>
+        </div>
+        <div className="flex gap-10">
           <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-display text-base font-bold text-brand-black">
-                Padel
-              </span>
-              <span className="font-body text-[11px] tracking-[0.12em] uppercase text-brand-pewter">
-                Manual
-              </span>
-            </div>
-            <p className="font-body text-xs text-brand-pewter mt-2 max-w-[280px] leading-relaxed">
-              Independent & curated. We feature partners, but we don&apos;t
-              publish junk.
-            </p>
+            <div className="label-caps mb-3">Explore</div>
+            {[
+              { label: "Courts", href: "/london/courts" },
+              { label: "Coaches", href: "/london/coaches" },
+              { label: "Leagues", href: "/london/leagues" },
+              { label: "Gear", href: "/gear" },
+            ].map((l) => (
+              <a key={l.href} href={l.href} className="block text-[13px] text-pm-muted mb-2 hover:text-pm-text transition-colors">{l.label}</a>
+            ))}
           </div>
-          <div className="flex gap-10">
-            <div>
-              <div className="font-body text-[10px] font-semibold tracking-[0.14em] uppercase text-brand-pewter mb-3">
-                Explore
-              </div>
-              {["London", "Coaches", "Courts", "Leagues", "Gear"].map((l) => (
-                <div
-                  key={l}
-                  className="font-body text-[13px] text-brand-muted mb-2"
-                >
-                  <a href={l === "Gear" ? "/gear" : `/london/${l.toLowerCase()}`} className="hover:text-brand-black transition-colors">
-                    {l}
-                  </a>
-                </div>
-              ))}
-            </div>
-            <div>
-              <div className="font-body text-[10px] font-semibold tracking-[0.14em] uppercase text-brand-pewter mb-3">
-                Company
-              </div>
-              {[
-                { label: "Partner", href: "/partner" },
-                { label: "Weekly Note", href: "/weekly" },
-              ].map((l) => (
-                <div
-                  key={l.href}
-                  className="font-body text-[13px] text-brand-muted mb-2"
-                >
-                  <a href={l.href} className="hover:text-brand-black transition-colors">
-                    {l.label}
-                  </a>
-                </div>
-              ))}
-            </div>
+          <div>
+            <div className="label-caps mb-3">More</div>
+            <a href="/weekly" className="block text-[13px] text-pm-muted mb-2 hover:text-pm-text transition-colors">Weekly Note</a>
           </div>
         </div>
-        <div className="font-body text-[11px] text-brand-ash mt-10">
-          © {new Date().getFullYear()} Padel Manual. All rights reserved.
-        </div>
+      </div>
+      <div className="text-[11px] text-pm-ash mt-10">
+        © {new Date().getFullYear()} Padel Manual. All rights reserved.
       </div>
     </footer>
   );
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
+      <body className="min-h-screen bg-pm-bg text-pm-text antialiased">
         <div className="mx-auto max-w-[960px] px-6">
           <Nav />
           {children}
