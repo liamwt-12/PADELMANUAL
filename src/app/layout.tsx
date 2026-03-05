@@ -21,6 +21,7 @@ function Nav() {
       </a>
       <nav className="flex gap-7 items-center">
         {[
+          { label: "Find Courts", href: "/find" },
           { label: "London", href: "/london" },
           { label: "Gear", href: "/gear" },
           { label: "Weekly", href: "/weekly" },
