@@ -1,16 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet default icon path issue in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
 
 interface Listing {
   id: string;
@@ -30,103 +24,104 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-// Custom marker icons
-const defaultIcon = L.divIcon({
-  className: 'pm-marker',
-  html: `<div style="width:12px;height:12px;background:#1A1A2E;border:2px solid #C4A35A;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
-  iconSize: [12, 12],
-  iconAnchor: [6, 6],
-});
+const COLORS = {
+  text: '#1c1917',
+  accent: '#c4956a',
+  muted: '#78716c',
+  faint: '#a8a29e',
+  bg: '#faf9f6',
+};
 
-const hoverIcon = L.divIcon({
-  className: 'pm-marker-hover',
-  html: `<div style="width:16px;height:16px;background:#C4A35A;border:2px solid #1A1A2E;border-radius:50%;box-shadow:0 2px 8px rgba(196,163,90,0.5);"></div>`,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-});
+const makeIcon = (size: number, bg: string, border: string, shadow: string) =>
+  L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;background:${bg};border:2px solid ${border};border-radius:50%;box-shadow:0 2px 8px ${shadow};transition:all 150ms ease;"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
 
-const selectedIcon = L.divIcon({
-  className: 'pm-marker-selected',
-  html: `<div style="width:20px;height:20px;background:#C4A35A;border:3px solid #1A1A2E;border-radius:50%;box-shadow:0 3px 12px rgba(196,163,90,0.6);"></div>`,
-  iconSize: [20, 20],
-  iconAnchor: [10, 10],
-});
+const defaultIcon = makeIcon(10, COLORS.text, COLORS.accent, 'rgba(0,0,0,0.15)');
+const hoverIcon = makeIcon(14, COLORS.accent, COLORS.text, 'rgba(196,149,106,0.3)');
+const selectedIcon = makeIcon(18, COLORS.accent, COLORS.text, 'rgba(196,149,106,0.45)');
 
 export default function MapComponent({ listings, hoveredId, selectedId, onSelect }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize map
+  // Init map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current, {
-      center: [53.5, -2.0], // Centre of UK
+      center: [53.5, -2.0],
       zoom: 6,
-      zoomControl: true,
-      attributionControl: true,
+      zoomControl: false,
+      attributionControl: false,
     });
 
-    // Use a clean, minimal tile layer
+    // Zoom control — top right
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Attribution — bottom right, compact
+    L.control.attribution({ position: 'bottomright', prefix: false })
+      .addAttribution('© <a href="https://www.openstreetmap.org/copyright">OSM</a> · <a href="https://carto.com">CARTO</a>')
+      .addTo(map);
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
     }).addTo(map);
 
     mapRef.current = map;
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
+    return () => { map.remove(); mapRef.current = null; };
   }, []);
 
-  // Update markers when listings change
+  // Markers
   useEffect(() => {
     if (!mapRef.current) return;
     const map = mapRef.current;
 
-    // Clear existing markers
     markersRef.current.forEach(m => m.remove());
     markersRef.current.clear();
 
-    // Add new markers
     listings.forEach(listing => {
       if (!listing.lat || !listing.lng) return;
+
+      const details = [
+        listing.city,
+        listing.courts ? `${listing.courts} court${listing.courts !== 1 ? 's' : ''}` : null,
+        listing.indoor !== null ? (listing.indoor ? 'Indoor' : 'Outdoor') : null,
+      ].filter(Boolean).join(' · ');
 
       const marker = L.marker([listing.lat, listing.lng], { icon: defaultIcon })
         .addTo(map)
         .bindPopup(`
-          <div style="font-family:Georgia,serif;min-width:160px;">
-            <strong style="color:#1A1A2E;font-size:13px;">${listing.name}</strong>
-            <br/>
-            <span style="color:#888;font-size:11px;">${listing.city || ''}</span>
-            ${listing.courts ? `<br/><span style="color:#666;font-size:11px;">${listing.courts} court${listing.courts !== 1 ? 's' : ''}</span>` : ''}
-            ${listing.indoor !== null ? `<br/><span style="color:#666;font-size:11px;">${listing.indoor ? '🏢 Indoor' : '🌤 Outdoor'}</span>` : ''}
-            <br/><a href="/${listing.slug}" style="color:#C4A35A;font-size:11px;text-decoration:none;">View listing →</a>
+          <div style="font-family:'DM Sans',system-ui,sans-serif;min-width:150px;padding:2px 0;">
+            <div style="font-weight:600;color:${COLORS.text};font-size:13px;line-height:1.3;">${listing.name}</div>
+            ${details ? `<div style="color:${COLORS.muted};font-size:11px;margin-top:3px;">${details}</div>` : ''}
+            <a href="/${listing.slug}" style="display:inline-block;margin-top:6px;color:${COLORS.accent};font-size:11px;font-weight:500;text-decoration:none;">View listing →</a>
           </div>
-        `, { closeButton: false });
+        `, {
+          closeButton: false,
+          className: 'pm-popup',
+          offset: [0, -4],
+        });
 
       marker.on('click', () => onSelect(listing.id));
-
       markersRef.current.set(listing.id, marker);
     });
 
-    // Fit bounds if we have markers
     if (listings.length > 0) {
       const bounds = L.latLngBounds(
-        listings
-          .filter(l => l.lat && l.lng)
-          .map(l => [l.lat, l.lng] as [number, number])
+        listings.filter(l => l.lat && l.lng).map(l => [l.lat, l.lng] as [number, number])
       );
       if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
       }
     }
   }, [listings, onSelect]);
 
-  // Update marker icons on hover/select
+  // Hover / select states
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
       if (id === selectedId) {
@@ -141,18 +136,14 @@ export default function MapComponent({ listings, hoveredId, selectedId, onSelect
       }
     });
 
-    // Pan to selected marker
     if (selectedId) {
       const marker = markersRef.current.get(selectedId);
       if (marker && mapRef.current) {
-        const ll = marker.getLatLng();
-        mapRef.current.panTo(ll, { animate: true });
+        mapRef.current.panTo(marker.getLatLng(), { animate: true });
         marker.openPopup();
       }
     }
   }, [hoveredId, selectedId]);
 
-  return (
-    <div ref={containerRef} className="w-full h-full" style={{ minHeight: '400px' }} />
-  );
+  return <div ref={containerRef} className="w-full h-full" />;
 }

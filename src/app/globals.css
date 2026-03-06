@@ -29,3 +29,25 @@
     @apply rounded-full border border-pm-border px-6 py-3 text-sm font-medium text-pm-muted transition-all hover:bg-pm-bg-card hover:border-pm-text/20;
   }
 }
+/* ─── Add these to the END of your globals.css ─── */
+
+/* Leaflet popup overrides */
+.pm-popup .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e2de;
+  padding: 0;
+}
+.pm-popup .leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 1.4;
+}
+.pm-popup .leaflet-popup-tip {
+  box-shadow: none;
+  border: 1px solid #e5e2de;
+}
+
+/* Hide footer on /find page — the full-height layout doesn't need it */
+.find-page ~ footer {
+  display: none;
+}
