@@ -99,7 +99,7 @@ export default function FindPageClient({ listings, cities }: Props) {
 
   return (
     /* Break out of the max-w-[960px] layout container */
-    <div className="find-page -mx-6 -mb-16" style={{ width: 'calc(100% + 3rem)' }}>
+    <div className="find-page " >
       <div className="flex flex-col" style={{ height: 'calc(100vh - 80px)' }}>
 
         {/* ─── Top Bar ─── */}
