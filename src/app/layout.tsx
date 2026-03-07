@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import MobileNav from "./MobileNav";
 
 export const metadata: Metadata = {
   title: {
@@ -12,6 +13,13 @@ export const metadata: Metadata = {
   openGraph: { siteName: "Padel Manual", type: "website", locale: "en_GB" },
 };
 
+const navLinks = [
+  { label: "Find Courts", href: "/find" },
+  { label: "London", href: "/london" },
+  { label: "Gear", href: "/gear" },
+  { label: "Weekly", href: "/weekly" },
+];
+
 function Nav() {
   return (
     <header className="flex items-center justify-between py-8">
@@ -19,13 +27,9 @@ function Nav() {
         <span className="font-serif text-xl font-bold tracking-tight text-pm-text">Padel</span>
         <span className="text-[11px] tracking-[0.12em] uppercase text-pm-faint">Manual</span>
       </a>
-      <nav className="flex gap-7 items-center">
-        {[
-          { label: "Find Courts", href: "/find" },
-          { label: "London", href: "/london" },
-          { label: "Gear", href: "/gear" },
-          { label: "Weekly", href: "/weekly" },
-        ].map((link) => (
+      {/* Desktop nav */}
+      <nav className="hidden sm:flex gap-7 items-center">
+        {navLinks.map((link) => (
           <a
             key={link.href}
             href={link.href}
@@ -35,6 +39,8 @@ function Nav() {
           </a>
         ))}
       </nav>
+      {/* Mobile nav */}
+      <MobileNav links={navLinks} />
     </header>
   );
 }
@@ -56,9 +62,8 @@ function Footer() {
           <div>
             <div className="label-caps mb-3">Explore</div>
             {[
-              { label: "Courts", href: "/london/courts" },
-              { label: "Coaches", href: "/london/coaches" },
-              { label: "Leagues", href: "/london/leagues" },
+              { label: "Find Courts", href: "/find" },
+              { label: "London", href: "/london" },
               { label: "Gear", href: "/gear" },
             ].map((l) => (
               <a key={l.href} href={l.href} className="block text-[13px] text-pm-muted mb-2 hover:text-pm-text transition-colors">{l.label}</a>
