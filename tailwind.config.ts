@@ -20,7 +20,7 @@ export default {
         },
       },
       fontFamily: {
-        serif: ['"Playfair Display"', "Georgia", "serif"],
+        serif: ['"Instrument Serif"', "Georgia", "serif"],
         sans: ['"DM Sans"', "system-ui", "sans-serif"],
       },
     },
