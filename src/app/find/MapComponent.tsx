@@ -73,6 +73,7 @@ export default function MapComponent({ listings, hoveredId, selectedId, onSelect
     }).addTo(map);
 
     mapRef.current = map;
+    setTimeout(() => map.invalidateSize(), 100);
     return () => { map.remove(); mapRef.current = null; };
   }, []);
 
@@ -145,5 +146,5 @@ export default function MapComponent({ listings, hoveredId, selectedId, onSelect
     }
   }, [hoveredId, selectedId]);
 
-  return <div ref={containerRef} className="w-full h-full" />;
+  return <div ref={containerRef} className="w-full h-full" style={{ minHeight: "100%" }} />;
 }
