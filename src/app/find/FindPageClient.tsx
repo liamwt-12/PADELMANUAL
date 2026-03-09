@@ -227,7 +227,7 @@ export default function FindPageClient({ listings, cities }: Props) {
         {/* Mobile floating toggle */}
         <div className="sm:hidden absolute bottom-6 left-1/2 -translate-x-1/2 z-30">
           <button
-            onClick={() => setView(view === 'list' ? 'map' : 'list')}
+            onClick={() => { const next = view === 'list' ? 'map' : 'list'; setView(next); if (next === 'map') setTimeout(() => window.dispatchEvent(new Event('resize')), 100); }}
             className="flex items-center gap-2 px-5 py-3 rounded-full bg-pm-text text-white text-sm font-medium shadow-lg shadow-black/20 active:scale-95 transition-transform"
           >
             {view === 'list' ? (
