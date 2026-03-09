@@ -2,6 +2,7 @@ import { getListingBySlug, getVenuesByCity } from "@/lib/db";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Listing } from "@/lib/types";
+import AvailabilityWidget from "@/components/AvailabilityWidget";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -50,6 +51,10 @@ export default async function ListingPage({ params }: Props) {
   const related = city ? await getVenuesByCity(city) : [];
   const others = related.filter((l) => l.slug !== slug).slice(0, 3);
 
+  // Type assertion for fields that may exist in DB but not in TS type
+  const tenantId = (listing as any).playtomic_tenant_id as string | null;
+  const playtomicUrl = listing.playtomic_url || null;
+
   return (
     <main className="pb-10">
       <section className="pb-8 pt-6">
@@ -63,11 +68,22 @@ export default async function ListingPage({ params }: Props) {
         )}
         <div className="mt-6 flex flex-wrap gap-3">
           {listing.booking_url && <LinkPill label="Book" href={listing.booking_url} />}
-          {listing.playtomic_url && <LinkPill label="Book on Playtomic" href={listing.playtomic_url} />}
+          {playtomicUrl && !listing.booking_url && <LinkPill label="Book on Playtomic" href={playtomicUrl} />}
           {listing.website_url && <LinkPill label="Website" href={listing.website_url} />}
           {listing.instagram_url && <LinkPill label="Instagram" href={listing.instagram_url} />}
         </div>
       </section>
+
+      {/* ── Live Availability (Playtomic venues only) ── */}
+      {tenantId && playtomicUrl && (
+        <section className="mb-6">
+          <AvailabilityWidget
+            tenantId={tenantId}
+            playtomicUrl={playtomicUrl}
+            venueName={listing.name}
+          />
+        </section>
+      )}
 
       {/* Details */}
       <section className="rounded-3xl border border-pm-border/40 bg-pm-bg-card p-8">
@@ -106,10 +122,9 @@ export default async function ListingPage({ params }: Props) {
         )}
       </section>
 
-      {/* ── What's missing — creates urgency to claim ── */}
+      {/* ── What's missing — urgency to claim ── */}
       {!listing.claimed && (
         <>
-          {/* Empty photo/review sections */}
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-xl border border-dashed border-pm-border/60 p-6 text-center">
               <div className="text-pm-ash text-2xl mb-2">📸</div>
@@ -128,7 +143,6 @@ export default async function ListingPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Claim CTA — no price, just capture the lead */}
           <section className="mt-6 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-6 md:p-8">
             <div className="md:flex md:items-center md:justify-between md:gap-6">
               <div>
@@ -136,7 +150,7 @@ export default async function ListingPage({ params }: Props) {
                   {isCoach ? "Is this you?" : "Is this your venue?"}
                 </h3>
                 <p className="mt-2 text-sm text-pm-muted leading-relaxed max-w-md">
-                  This is an auto-generated profile. Claim it to update your details, add 
+                  This is an auto-generated profile. Claim it to update your details, add
                   photos, link your Instagram, and connect with players in your area.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-pm-faint">

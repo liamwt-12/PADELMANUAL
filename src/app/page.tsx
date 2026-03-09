@@ -1,14 +1,7 @@
 import { getVenueCount, getCoachCount, getCourtTotal, getTopCities, getFeaturedVenues } from "@/lib/db";
 import { gearItems } from "@/lib/gear";
-import { createClient } from "@supabase/supabase-js";
-import HeroMap from "./HeroMap";
 
 export const revalidate = 3600;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default async function Home() {
   const [venueCount, coachCount, courtTotal, topCities, featuredVenues] = await Promise.all([
@@ -19,47 +12,66 @@ export default async function Home() {
     getFeaturedVenues(4),
   ]);
 
-  const { data: venueCoords } = await supabase
-    .from('listings')
-    .select('lat, lng')
-    .not('lat', 'is', null)
-    .not('lng', 'is', null);
-
   const gearPick = gearItems[0]?.products[0];
 
   return (
     <main className="pb-8">
       {/* ── Hero ── */}
-      <section className="relative pt-10 pb-16 min-h-[480px] md:min-h-[520px]">
-        {/* Animated dot map — right side */}
-        <HeroMap venues={venueCoords || []} />
+      <section className="pt-10 pb-14">
+        <h1 className="max-w-[640px] font-serif text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
+          The modern guide<br />to UK padel.
+        </h1>
+        <p className="mt-6 max-w-[420px] text-lg leading-relaxed text-pm-muted">
+          Courts, coaches, gear, and leagues — curated for players who
+          want to find the good stuff without wading through noise.
+        </p>
 
-        {/* Text — left side, above map on mobile */}
-        <div className="relative z-10">
-          <h1 className="max-w-[560px] font-serif text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
-            The modern guide<br />to UK padel.
-          </h1>
-          <p className="mt-6 max-w-[400px] text-lg leading-relaxed text-pm-muted md:text-xl">
-            Courts, coaches, gear, and leagues — curated for players who
-            want to find the good stuff without wading through noise.
-          </p>
+        {/* Stats row */}
+        <div className="mt-10 flex gap-8 md:gap-12">
+          <a href="/find" className="group">
+            <div className="font-serif text-4xl md:text-5xl font-bold text-pm-text group-hover:text-pm-accent transition-colors">{venueCount}</div>
+            <div className="text-xs text-pm-faint mt-1 group-hover:text-pm-muted transition-colors">venues across the UK →</div>
+          </a>
+          <a href="/find" className="group">
+            <div className="font-serif text-4xl md:text-5xl font-bold text-pm-text group-hover:text-pm-accent transition-colors">{courtTotal.toLocaleString()}</div>
+            <div className="text-xs text-pm-faint mt-1 group-hover:text-pm-muted transition-colors">courts</div>
+          </a>
+          <a href="/find?type=coach" className="group">
+            <div className="font-serif text-4xl md:text-5xl font-bold text-pm-text group-hover:text-pm-accent transition-colors">{coachCount}</div>
+            <div className="text-xs text-pm-faint mt-1 group-hover:text-pm-muted transition-colors">coaches</div>
+          </a>
+        </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href="/find" className="inline-flex items-center gap-2 rounded-full bg-pm-text text-pm-bg px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition-opacity">
-              <span className="text-pm-accent font-bold">{venueCount}</span> courts across the UK →
-            </a>
-            <a href="/find?type=coach" className="inline-flex items-center gap-2 rounded-full border border-pm-border bg-white/80 backdrop-blur-sm px-5 py-2.5 text-sm font-medium text-pm-text hover:bg-white transition-colors">
-              <span className="text-pm-accent font-bold">{coachCount}</span> coaches
-            </a>
-            <a href="/gear" className="inline-flex items-center gap-2 rounded-full border border-pm-border bg-white/80 backdrop-blur-sm px-5 py-2.5 text-sm font-medium text-pm-text hover:bg-white transition-colors">
-              Gear guides →
-            </a>
-          </div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <a href="/find" className="btn-primary">
+            Find courts →
+          </a>
+          <a href="/quiz" className="btn-secondary">
+            Take the racket quiz
+          </a>
         </div>
       </section>
 
+      {/* ── Live Availability Teaser ── */}
+      <section className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-8 md:p-10">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="label-caps !text-emerald-700">Live court availability</div>
+        </div>
+        <h2 className="font-serif text-2xl font-semibold tracking-tight">
+          See what&apos;s free right now
+        </h2>
+        <p className="mt-2 text-sm text-pm-muted max-w-md">
+          Padel Manual shows real-time court availability for 184 Playtomic venues across the UK. 
+          Find an open slot, book in seconds.
+        </p>
+        <a href="/find" className="mt-4 inline-block text-sm font-medium text-emerald-700 hover:text-emerald-900 transition-colors">
+          Browse venues with live availability →
+        </a>
+      </section>
+
       {/* ── Top Cities ── */}
-      <section className="rounded-2xl border border-pm-border/60 bg-pm-bg-card p-8 md:p-10">
+      <section className="mt-14 rounded-2xl border border-pm-border/60 bg-pm-bg-card p-8 md:p-10">
         <div className="label-caps">Find courts by city</div>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {topCities.map(({ city, count }) => (
@@ -80,20 +92,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Quiz CTA ── */}
-      <section className="mt-14 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-8 md:p-10 text-center">
-        <div className="label-caps">Not sure what to buy?</div>
-        <h3 className="mt-3 font-serif text-2xl font-semibold tracking-tight">
-          Find your perfect racket in 30 seconds
-        </h3>
-        <p className="mt-2 text-sm text-pm-muted max-w-md mx-auto">
-          Five questions. We'll match you with 3 rackets that suit your game, level, and budget.
-        </p>
-        <a href="/quiz" className="mt-5 btn-primary inline-block">
-          Take the quiz →
-        </a>
-      </section>
-
       {/* ── Featured Venues ── */}
       {featuredVenues.length > 0 && (
         <section className="mt-14">
@@ -102,9 +100,7 @@ export default async function Home() {
               <h2 className="font-serif text-2xl font-semibold tracking-tight">Where to play</h2>
               <p className="mt-1 text-sm text-pm-faint">{courtTotal.toLocaleString()} courts across {venueCount} venues</p>
             </div>
-            <a href="/find" className="text-xs font-medium text-pm-faint hover:text-pm-text transition-colors">
-              Find courts →
-            </a>
+            <a href="/find" className="text-xs font-medium text-pm-faint hover:text-pm-text transition-colors">Find courts →</a>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {featuredVenues.map((v) => (
@@ -116,9 +112,7 @@ export default async function Home() {
                   <span className="text-[10px] font-medium text-pm-faint">{v.city}</span>
                 </div>
                 <div className="mt-3 font-serif text-lg font-semibold tracking-tight">{v.name}</div>
-                {v.address && (
-                  <p className="mt-2 text-[13px] leading-relaxed text-pm-muted truncate">{v.address}</p>
-                )}
+                {v.address && <p className="mt-2 text-[13px] leading-relaxed text-pm-muted truncate">{v.address}</p>}
               </a>
             ))}
           </div>
@@ -140,9 +134,6 @@ export default async function Home() {
               <a href={gearPick.url || gearPick.amazonUrl} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 inline-block text-xs font-medium text-pm-muted underline underline-offset-4 hover:text-pm-text transition-colors">
                 View on Padel Market →
               </a>
-              <div className="mt-3">
-                <a href="/gear/best-padel-rackets-uk" className="text-xs text-pm-faint hover:text-pm-text transition-colors">Read the full racket guide →</a>
-              </div>
             </div>
           </div>
         </section>
@@ -172,14 +163,14 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Claim CTA — no price shown ── */}
+      {/* ── Claim CTA ── */}
       <section className="mt-14 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-8 md:p-10">
         <div className="md:flex md:items-center md:justify-between md:gap-8">
           <div>
             <div className="label-caps">For venues & coaches</div>
             <h3 className="mt-3 font-serif text-xl font-semibold tracking-tight">Your listing is already here.</h3>
             <p className="mt-2 text-sm text-pm-muted max-w-md leading-relaxed">
-              Every padel venue and coach in the UK gets a free profile on Padel Manual. 
+              Every padel venue and coach in the UK gets a free profile on Padel Manual.
               Claim yours to update your details, add photos, and connect with local players.
             </p>
           </div>
