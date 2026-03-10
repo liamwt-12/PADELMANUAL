@@ -2,6 +2,7 @@ import { getVenueCount, getCoachCount, getCourtTotal, getTopCities, getFeaturedV
 import { gearItems } from "@/lib/gear";
 import { createClient } from "@supabase/supabase-js";
 import HomeSearch from "./HomeSearch";
+import GearShowcase from "./GearShowcase";
 
 export const revalidate = 3600;
 
@@ -164,6 +165,9 @@ export default async function Home() {
           </a>
         </div>
       </section>
+
+      {/* ── Trending Rackets */}
+      <GearShowcase />
 
       {/* ── Gear Guides ── */}
       <section className="mt-14">
