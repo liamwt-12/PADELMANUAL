@@ -1,13 +1,13 @@
 interface Props {
   name: string;
   city: string | null;
-  postcode: string | null;
-  address: string | null;
-  lat: number | null;
-  lng: number | null;
-  courts: number | null;
-  indoor: boolean | null;
-  website: string | null;
+  postcode: string | null | undefined;
+  address: string | null | undefined;
+  lat: number | null | undefined;
+  lng: number | null | undefined;
+  courts: number | null | undefined;
+  indoor: boolean | null | undefined;
+  website: string | null | undefined;
   slug: string;
 }
 
