@@ -4,9 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(request: NextRequest) {
   try {
     const { slug, type } = await request.json();
-    if (!slug || !type) {
-      return NextResponse.json({ ok: false }, { status: 400 });
-    }
+    if (!slug || !type) return NextResponse.json({ ok: false }, { status: 400 });
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,22 +12,13 @@ export async function POST(request: NextRequest) {
     );
 
     if (type === 'view') {
-      await supabase.rpc('increment_view', { listing_slug: slug }).catch(() => {
-        // Fallback if RPC doesn't exist
-        return supabase
-          .from('listings')
-          .update({ 
-            view_count: supabase.rpc ? undefined : 1,
-            last_viewed_at: new Date().toISOString() 
-          })
-          .eq('slug', slug);
-      });
+      await supabase.rpc('increment_view', { listing_slug: slug });
     } else if (type === 'click') {
-      await supabase.rpc('increment_click', { listing_slug: slug }).catch(() => null);
+      await supabase.rpc('increment_click', { listing_slug: slug });
     }
 
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ ok: true }); // Never fail visibly
+    return NextResponse.json({ ok: true });
   }
 }
