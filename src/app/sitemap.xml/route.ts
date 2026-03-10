@@ -8,22 +8,13 @@ const supabase = createClient(
 const BASE = 'https://www.padelmanual.com';
 
 export async function GET() {
-  // Fetch all listing slugs
   const { data: listings } = await supabase
     .from('listings')
     .select('slug, city')
     .not('slug', 'is', null);
 
-  // Fetch all gear product slugs  
-  const { data: gearProducts } = await supabase
-    .from('gear_products')
-    .select('slug')
-    .not('slug', 'is', null);
-
-  // Get unique cities for city pages
   const cities = [...new Set((listings || []).map(l => l.city).filter(Boolean))];
 
-  // Get unique postcode prefixes
   const { data: postcodeData } = await supabase
     .from('listings')
     .select('postcode')
@@ -37,7 +28,6 @@ export async function GET() {
 
   const now = new Date().toISOString().split('T')[0];
 
-  // Static pages
   const staticPages = [
     { url: '', priority: '1.0', freq: 'daily' },
     { url: '/find', priority: '0.9', freq: 'daily' },
@@ -45,77 +35,46 @@ export async function GET() {
     { url: '/gear/shop', priority: '0.8', freq: 'daily' },
     { url: '/quiz', priority: '0.7', freq: 'monthly' },
     { url: '/demo', priority: '0.6', freq: 'monthly' },
-    { url: '/weekly', priority: '0.6', freq: 'weekly' },
-    // Editorial articles
+    // Editorial guides
     { url: '/guides/padel-vs-tennis', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-cost-uk', priority: '0.8', freq: 'monthly' },
-    // Gear guides
+    { url: '/guides/padel-rules', priority: '0.8', freq: 'monthly' },
+    { url: '/guides/what-to-wear', priority: '0.7', freq: 'monthly' },
+    // Gear guides (editorial)
     { url: '/gear/best-padel-rackets-uk', priority: '0.8', freq: 'monthly' },
     { url: '/gear/best-padel-shoes-uk', priority: '0.7', freq: 'monthly' },
     { url: '/gear/best-padel-balls-uk', priority: '0.7', freq: 'monthly' },
     { url: '/gear/best-padel-bags-uk', priority: '0.7', freq: 'monthly' },
-    // Racket filter pages
-    { url: '/gear/rackets/under-100', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/under-150', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/under-200', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/premium', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/round', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/diamond', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/teardrop', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/hybrid', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/bullpadel', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/adidas', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/nox', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/head', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/babolat', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/wilson', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/siux', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/women', priority: '0.7', freq: 'weekly' },
-    { url: '/gear/rackets/deals', priority: '0.7', freq: 'daily' },
+    // Racket filters
+    ...['under-100', 'under-150', 'under-200', 'premium', 'round', 'diamond', 'teardrop', 'hybrid',
+        'bullpadel', 'adidas', 'nox', 'head', 'babolat', 'wilson', 'siux', 'women', 'deals'
+    ].map(f => ({ url: `/gear/rackets/${f}`, priority: '0.7', freq: 'weekly' })),
+    // Shoe filters
+    ...['all', 'men', 'women', 'asics', 'head', 'adidas', 'bullpadel', 'wilson', 'babolat', 'joma', 'deals'
+    ].map(f => ({ url: `/gear/shoes/${f}`, priority: '0.7', freq: 'weekly' })),
+    // Bag filters
+    ...['all', 'adidas', 'bullpadel', 'head', 'nox', 'wilson', 'deals'
+    ].map(f => ({ url: `/gear/bags/${f}`, priority: '0.7', freq: 'weekly' })),
   ];
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
   xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
 
-  // Static pages
   for (const page of staticPages) {
-    xml += `  <url>\n`;
-    xml += `    <loc>${BASE}${page.url}</loc>\n`;
-    xml += `    <lastmod>${now}</lastmod>\n`;
-    xml += `    <changefreq>${page.freq}</changefreq>\n`;
-    xml += `    <priority>${page.priority}</priority>\n`;
-    xml += `  </url>\n`;
+    xml += `  <url><loc>${BASE}${page.url}</loc><lastmod>${now}</lastmod><changefreq>${page.freq}</changefreq><priority>${page.priority}</priority></url>\n`;
   }
 
-  // Venue/coach listing pages
   for (const listing of (listings || [])) {
     if (!listing.slug) continue;
-    xml += `  <url>\n`;
-    xml += `    <loc>${BASE}/${listing.slug}</loc>\n`;
-    xml += `    <lastmod>${now}</lastmod>\n`;
-    xml += `    <changefreq>weekly</changefreq>\n`;
-    xml += `    <priority>0.6</priority>\n`;
-    xml += `  </url>\n`;
+    xml += `  <url><loc>${BASE}/${listing.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
   }
 
-  // City pages
   for (const city of cities) {
-    xml += `  <url>\n`;
-    xml += `    <loc>${BASE}/city/${encodeURIComponent(city!.toLowerCase())}</loc>\n`;
-    xml += `    <lastmod>${now}</lastmod>\n`;
-    xml += `    <changefreq>weekly</changefreq>\n`;
-    xml += `    <priority>0.7</priority>\n`;
-    xml += `  </url>\n`;
+    xml += `  <url><loc>${BASE}/city/${encodeURIComponent(city!.toLowerCase())}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
   }
 
-  // Postcode area pages
   for (const area of postcodeAreas) {
-    xml += `  <url>\n`;
-    xml += `    <loc>${BASE}/courts/${area!.toLowerCase()}</loc>\n`;
-    xml += `    <lastmod>${now}</lastmod>\n`;
-    xml += `    <changefreq>weekly</changefreq>\n`;
-    xml += `    <priority>0.6</priority>\n`;
-    xml += `  </url>\n`;
+    xml += `  <url><loc>${BASE}/courts/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
   }
 
   xml += '</urlset>';
