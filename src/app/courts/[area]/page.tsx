@@ -49,7 +49,7 @@ const AREA_NAMES: Record<string, string> = {
   'AB': 'Aberdeen', 'DD': 'Dundee', 'FK': 'Falkirk', 'KY': 'Kirkcaldy',
   'PA': 'Paisley', 'TD': 'Galashiels',
   'LL': 'Llandudno', 'SY': 'Shrewsbury', 'LD': 'Llandrindod Wells',
-  'NP': 'Newport', 'HR': 'Hereford',
+  'NP': 'Newport',
 };
 
 type Props = { params: Promise<{ area: string }> };
