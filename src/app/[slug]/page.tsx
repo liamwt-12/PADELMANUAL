@@ -92,7 +92,7 @@ export default async function ListingPage({ params }: Props) {
   return (
     <main className="pb-10">
       <ViewTracker slug={slug} />
-      <ListingSchema name={listing.name} city={city} postcode={listing.postcode} address={listing.address} lat={lat} lng={lng} courts={courts} indoor={listing.indoor} website={listing.website_url} slug={slug} />
+      <ListingSchema name={listing.name} city={city} postcode={listing.postcode} address={listing.address} lat={lat} lng={lng} courts={courts} indoor={listing.indoor ?? null} website={listing.website_url} slug={slug} />
       {/* ── Header ── */}
       <section className="pt-6 pb-4">
         <a href="/find" className="text-xs text-pm-faint hover:text-pm-text transition-colors">← All venues</a>
