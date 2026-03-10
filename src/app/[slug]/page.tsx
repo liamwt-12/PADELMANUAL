@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Listing } from "@/lib/types";
 import AvailabilityWidget from "@/components/AvailabilityWidget";
+import ViewTracker from "@/components/ViewTracker";
 import ClaimForm from "@/components/ClaimForm";
 import GooglePlacesData from "@/components/GooglePlacesData";
 
@@ -89,6 +90,7 @@ export default async function ListingPage({ params }: Props) {
 
   return (
     <main className="pb-10">
+      <ViewTracker slug={slug} />
       {/* ── Header ── */}
       <section className="pt-6 pb-4">
         <a href="/find" className="text-xs text-pm-faint hover:text-pm-text transition-colors">← All venues</a>
