@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Listing } from "@/lib/types";
 import AvailabilityWidget from "@/components/AvailabilityWidget";
+import ClaimForm from "@/components/ClaimForm";
+import GooglePlacesData from "@/components/GooglePlacesData";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -12,26 +14,55 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!listing) return {};
   const city = listing.city || listing.area || "UK";
   return {
-    title: `${listing.name} — Padel in ${city}`,
-    description: listing.short_blurb || listing.description?.slice(0, 160) || `${listing.name} — find courts, book, and play padel in ${city}.`,
+    title: `${listing.name} — Padel in ${city} | Book & Play`,
+    description: listing.short_blurb || listing.description?.slice(0, 160) || `${listing.name} — find courts, see live availability, read reviews, and book padel in ${city}.`,
   };
 }
 
-function LinkPill({ label, href }: { label: string; href: string }) {
+function LinkPill({ label, href, primary }: { label: string; href: string; primary?: boolean }) {
   return (
-    <a className="inline-block rounded-full border border-pm-border px-4 py-2 text-sm text-pm-muted hover:bg-pm-bg-hover hover:text-pm-text transition-all" href={href} target="_blank" rel="noreferrer">
+    <a
+      className={`inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
+        primary
+          ? 'bg-pm-text text-white hover:opacity-90'
+          : 'border border-pm-border text-pm-muted hover:bg-pm-bg-hover hover:text-pm-text'
+      }`}
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+    >
       {label} →
     </a>
+  );
+}
+
+function StatPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-pm-border/40 bg-white px-4 py-3 text-center">
+      <div className="font-serif text-lg font-bold text-pm-text">{value}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">{label}</div>
+    </div>
   );
 }
 
 function RelatedCard({ listing }: { listing: Listing }) {
   return (
     <a href={`/${listing.slug}`} className="card block">
-      <div className="font-serif text-base font-semibold tracking-tight">{listing.name}</div>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-pm-faint">
+          {listing.indoor === true ? 'Indoor' : listing.indoor === false ? 'Outdoor' : ''}
+          {listing.courts ? `${listing.indoor !== null ? ' · ' : ''}${listing.courts} courts` : ''}
+        </span>
+        {(listing as any).playtomic_tenant_id && (
+          <span className="flex items-center gap-1 text-[10px] text-emerald-600">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Live
+          </span>
+        )}
+      </div>
+      <div className="mt-2 font-serif text-base font-semibold tracking-tight">{listing.name}</div>
       <div className="mt-1 text-[13px] text-pm-faint">
         {listing.city || listing.area || "UK"}
-        {listing.courts ? ` · ${listing.courts} courts` : ""}
       </div>
     </a>
   );
@@ -46,142 +77,134 @@ export default async function ListingPage({ params }: Props) {
   const courts = listing.courts ?? listing.courts_count ?? null;
   const isVenue = listing.listing_type === "venue" || listing.type === "court";
   const isCoach = listing.listing_type === "coach" || listing.type === "coach";
-  const typeLabel = isCoach ? "Coach" : isVenue ? "Court / Venue" : "Listing";
+  const typeLabel = isCoach ? "Coach" : isVenue ? "Venue" : "Listing";
 
   const related = city ? await getVenuesByCity(city) : [];
-  const others = related.filter((l) => l.slug !== slug).slice(0, 3);
+  const others = related.filter((l) => l.slug !== slug).slice(0, 4);
 
-  // Type assertion for fields that may exist in DB but not in TS type
   const tenantId = (listing as any).playtomic_tenant_id as string | null;
   const playtomicUrl = listing.playtomic_url || null;
+  const lat = (listing as any).lat;
+  const lng = (listing as any).lng;
 
   return (
     <main className="pb-10">
-      <section className="pb-8 pt-6">
+      {/* ── Header ── */}
+      <section className="pt-6 pb-4">
         <a href="/find" className="text-xs text-pm-faint hover:text-pm-text transition-colors">← All venues</a>
-        <div className="label-caps mt-6">
-          {typeLabel}{city ? ` · ${city}` : ""}{listing.region && !city ? ` · ${listing.region}` : ""}
+
+        <div className="mt-5 flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="label-caps">{typeLabel}</span>
+              {city && <span className="text-[10px] text-pm-faint">· {city}</span>}
+              {listing.claimed && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-pm-text text-white px-2.5 py-0.5 text-[10px] font-semibold">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                  Verified
+                </span>
+              )}
+            </div>
+            <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">{listing.name}</h1>
+            {(listing.short_blurb || listing.address) && (
+              <p className="mt-3 max-w-xl text-base leading-relaxed text-pm-muted">{listing.short_blurb || listing.address}</p>
+            )}
+          </div>
         </div>
-        <h1 className="mt-3 font-serif text-4xl font-bold tracking-tight">{listing.name}</h1>
-        {(listing.short_blurb || listing.address) && (
-          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-pm-muted">{listing.short_blurb || listing.address}</p>
-        )}
-        <div className="mt-6 flex flex-wrap gap-3">
-          {listing.booking_url && <LinkPill label="Book" href={listing.booking_url} />}
-          {playtomicUrl && !listing.booking_url && <LinkPill label="Book on Playtomic" href={playtomicUrl} />}
+
+        {/* Action buttons */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {playtomicUrl && <LinkPill label="Book on Playtomic" href={playtomicUrl} primary />}
+          {listing.booking_url && !playtomicUrl && <LinkPill label="Book" href={listing.booking_url} primary />}
           {listing.website_url && <LinkPill label="Website" href={listing.website_url} />}
           {listing.instagram_url && <LinkPill label="Instagram" href={listing.instagram_url} />}
+          {lat && lng && (
+            <LinkPill label="Directions" href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`} />
+          )}
         </div>
       </section>
 
-      {/* ── Live Availability (Playtomic venues only) ── */}
-      {tenantId && playtomicUrl && (
+      {/* ── Google Places: Photos, Rating, Reviews ── */}
+      {city && (
         <section className="mb-6">
-          <AvailabilityWidget
-            tenantId={tenantId}
-            playtomicUrl={playtomicUrl}
-            venueName={listing.name}
-          />
+          <GooglePlacesData venueName={listing.name} city={city} />
         </section>
       )}
 
-      {/* Details */}
-      <section className="rounded-3xl border border-pm-border/40 bg-pm-bg-card p-8">
-        <div className="grid gap-8 md:grid-cols-4">
-          {city && (
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-pm-faint">Location</div>
-              <div className="mt-1 font-medium">{city}</div>
-              {listing.postcode && <div className="text-xs text-pm-faint mt-0.5">{listing.postcode}</div>}
-            </div>
-          )}
-          {courts != null && courts > 0 && (
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-pm-faint">Courts</div>
-              <div className="mt-1 font-medium">{courts}</div>
-            </div>
-          )}
-          {listing.indoor !== null && listing.indoor !== undefined && (
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-pm-faint">Setting</div>
-              <div className="mt-1 font-medium">{listing.indoor ? "Indoor" : "Outdoor"}</div>
-            </div>
-          )}
-          {listing.booking_platform && (
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-pm-faint">Booking</div>
-              <div className="mt-1 font-medium capitalize">{listing.booking_platform}</div>
-            </div>
-          )}
-        </div>
-
-        {listing.description && (
-          <div className="mt-8 border-t border-pm-border/40 pt-8">
-            <div className="max-w-2xl whitespace-pre-wrap text-sm leading-[1.8] text-pm-muted">{listing.description}</div>
-          </div>
+      {/* ── Stats Pills ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {courts != null && courts > 0 && <StatPill label="Courts" value={String(courts)} />}
+        {listing.indoor !== null && listing.indoor !== undefined && (
+          <StatPill label="Setting" value={listing.indoor ? "Indoor" : "Outdoor"} />
         )}
-      </section>
+        {listing.booking_platform && (
+          <StatPill label="Booking" value={listing.booking_platform.charAt(0).toUpperCase() + listing.booking_platform.slice(1)} />
+        )}
+        {listing.postcode && <StatPill label="Postcode" value={listing.postcode} />}
+      </div>
 
-      {/* ── What's missing — urgency to claim ── */}
-      {!listing.claimed && (
-        <>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-dashed border-pm-border/60 p-6 text-center">
-              <div className="text-pm-ash text-2xl mb-2">📸</div>
-              <p className="text-xs font-medium text-pm-muted">No photos yet</p>
-              <p className="text-[11px] text-pm-accent mt-1">Claim to add photos</p>
-            </div>
-            <div className="rounded-xl border border-dashed border-pm-border/60 p-6 text-center">
-              <div className="text-pm-ash text-2xl mb-2">⭐</div>
-              <p className="text-xs font-medium text-pm-muted">No reviews yet</p>
-              <p className="text-[11px] text-pm-faint mt-1">Be the first to review</p>
-            </div>
-            <div className="rounded-xl border border-dashed border-pm-border/60 p-6 text-center">
-              <div className="text-pm-ash text-2xl mb-2">📊</div>
-              <p className="text-xs font-medium text-pm-muted">Analytics available</p>
-              <p className="text-[11px] text-pm-accent mt-1">Claim to see visitor data</p>
-            </div>
-          </div>
-
-          <section className="mt-6 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-6 md:p-8">
-            <div className="md:flex md:items-center md:justify-between md:gap-6">
-              <div>
-                <h3 className="font-serif text-lg font-semibold tracking-tight">
-                  {isCoach ? "Is this you?" : "Is this your venue?"}
-                </h3>
-                <p className="mt-2 text-sm text-pm-muted leading-relaxed max-w-md">
-                  This is an auto-generated profile. Claim it to update your details, add
-                  photos, link your Instagram, and connect with players in your area.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-pm-faint">
-                  <span>✓ Update your info</span>
-                  <span>✓ Add photos & video</span>
-                  <span>✓ Link Instagram</span>
-                  <span>✓ See visitor analytics</span>
-                  <span>✓ Respond to reviews</span>
-                </div>
-              </div>
-              <div className="mt-5 md:mt-0 shrink-0">
-                <a
-                  href={`mailto:hello@padelmanual.com?subject=Claim: ${encodeURIComponent(listing.name)}&body=Hi, I'd like to claim the listing for ${encodeURIComponent(listing.name)}.%0A%0AMy name:%0AMy role:%0A`}
-                  className="btn-primary text-center text-sm block"
-                >
-                  Claim this listing
-                </a>
-                <p className="text-[11px] text-pm-faint text-center mt-2">Free · Takes 2 minutes</p>
-              </div>
-            </div>
-          </section>
-        </>
+      {/* ── Live Availability ── */}
+      {tenantId && playtomicUrl && (
+        <section className="mb-6">
+          <AvailabilityWidget tenantId={tenantId} playtomicUrl={playtomicUrl} venueName={listing.name} />
+        </section>
       )}
 
-      {/* Related */}
+      {/* ── Google Map ── */}
+      {lat && lng && (
+        <section className="mb-6">
+          <div className="rounded-2xl overflow-hidden border border-pm-border/30">
+            <iframe
+              src={`https://www.google.com/maps/embed/v1/place?key=${process.env.GOOGLE_PLACES_API_KEY}&q=${lat},${lng}&zoom=15`}
+              width="100%"
+              height="250"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ── Description ── */}
+      {listing.description && (
+        <section className="rounded-2xl border border-pm-border/30 bg-pm-bg-card p-6 md:p-8 mb-6">
+          <h2 className="font-serif text-lg font-semibold tracking-tight mb-3">About</h2>
+          <div className="max-w-2xl whitespace-pre-wrap text-sm leading-[1.9] text-pm-muted">{listing.description}</div>
+        </section>
+      )}
+
+      {/* ── Claim Section ── */}
+      {!listing.claimed && (
+        <section className="mb-6">
+          <ClaimForm venueName={listing.name} venueSlug={slug} isCoach={isCoach} />
+        </section>
+      )}
+
+      {/* ── Nearby Venues ── */}
       {others.length > 0 && (
-        <section className="mt-12">
-          <h3 className="font-serif text-xl font-semibold tracking-tight mb-4">More venues in {city}</h3>
-          <div className="grid gap-3 md:grid-cols-3">
+        <section className="mt-8">
+          <h3 className="font-serif text-xl font-semibold tracking-tight mb-4">
+            More padel in {city}
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2">
             {others.map((l) => <RelatedCard key={l.id} listing={l} />)}
           </div>
+          <div className="mt-4 text-center">
+            <a href={`/city/${encodeURIComponent((city || '').toLowerCase())}`} className="text-xs text-pm-accent hover:text-pm-text transition-colors">
+              View all venues in {city} →
+            </a>
+          </div>
+        </section>
+      )}
+
+      {/* ── See Premium Demo ── */}
+      {!listing.claimed && (
+        <section className="mt-8 text-center">
+          <a href="/demo" className="text-xs text-pm-faint hover:text-pm-accent transition-colors">
+            See what a premium listing looks like →
+          </a>
         </section>
       )}
     </main>
