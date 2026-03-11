@@ -7,7 +7,6 @@ export async function middleware(request: NextRequest) {
   // Skip routes that handle their own auth or must be publicly accessible
   if (
     pathname.startsWith('/venue/auth/callback') ||
-    pathname.startsWith('/venue/dev-login') ||
     pathname.startsWith('/venue/login')
   ) {
     return NextResponse.next()
@@ -49,6 +48,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Only run on /venue/* routes — never on API routes
-    '/venue/((?!auth/callback|dev-login).*)',
+    '/venue/((?!auth/callback).*)',
   ],
 }
