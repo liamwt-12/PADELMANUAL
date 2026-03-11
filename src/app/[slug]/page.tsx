@@ -7,6 +7,7 @@ import ViewTracker from "@/components/ViewTracker";
 import ClaimForm from "@/components/ClaimForm";
 import GooglePlacesData from "@/components/GooglePlacesData";
 import ListingSchema from "@/components/ListingSchema";
+import LeadCaptureForm from "@/components/LeadCaptureForm";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -176,6 +177,13 @@ export default async function ListingPage({ params }: Props) {
         <section className="rounded-2xl border border-pm-border/30 bg-pm-bg-card p-6 md:p-8 mb-6">
           <h2 className="font-serif text-lg font-semibold tracking-tight mb-3">About</h2>
           <div className="max-w-2xl whitespace-pre-wrap text-sm leading-[1.9] text-pm-muted">{listing.description}</div>
+        </section>
+      )}
+
+      {/* ── Lead Capture (claimed venues only) ── */}
+      {listing.claimed && isVenue && (
+        <section className="mb-6">
+          <LeadCaptureForm listingId={listing.id} venueName={listing.name} />
         </section>
       )}
 

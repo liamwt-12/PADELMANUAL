@@ -6,6 +6,7 @@ import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
 import UpgradeButton from '@/components/UpgradeButton'
 import GBPInsightsCard from '@/components/GBPInsightsCard'
+import CourtUtilisationCard from '@/components/CourtUtilisationCard'
 
 type Lead = {
   id: string
@@ -130,7 +131,7 @@ function RecentLeadsCard({ leads, totalCount }: { leads: Lead[]; totalCount: num
 /* ── Overview page ── */
 
 export default function DashboardOverview() {
-  const { listing, owner, isPremium, isTrial } = useDashboard()
+  const { listing, owner, isPremium, isTrial, refresh } = useDashboard()
   const searchParams = useSearchParams()
   const justUpgraded = searchParams.get('upgraded') === 'true'
   const justConnectedGBP = searchParams.get('gbp') === 'connected'
@@ -169,6 +170,15 @@ export default function DashboardOverview() {
       .eq('contacted', false)
       .then(({ count }) => setUnreadCount(count || 0))
   }, [listing])
+
+  // Refresh data after Stripe upgrade (webhook may have already updated Supabase)
+  useEffect(() => {
+    if (!justUpgraded) return
+    // Immediate refresh + retry after 3s in case webhook is still processing
+    refresh()
+    const timer = setTimeout(() => refresh(), 3000)
+    return () => clearTimeout(timer)
+  }, [justUpgraded, refresh])
 
   // Fetch GBP searches for the stat card
   useEffect(() => {
@@ -273,6 +283,16 @@ export default function DashboardOverview() {
         <RecentLeadsCard leads={leads} totalCount={leadCount} />
         {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
       </div>
+
+      {/* ── Court Utilisation (Playtomic venues, premium only) ── */}
+      {(isPremium || isTrial) && listing?.playtomic_tenant_id && (
+        <div className="mb-6">
+          <CourtUtilisationCard
+            tenantId={listing.playtomic_tenant_id}
+            totalCourts={listing.courts ?? listing.courts_count ?? 1}
+          />
+        </div>
+      )}
 
       {/* ── Listing preview ── */}
       {listing && (

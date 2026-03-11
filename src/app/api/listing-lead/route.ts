@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { listing_id, player_name, player_email, interest_type, player_message } = body
+
+    if (!listing_id || !player_name || !player_email?.includes('@')) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
+    )
+
+    const { error } = await supabase
+      .from('listing_leads')
+      .insert({
+        listing_id,
+        player_name,
+        player_email,
+        interest_type: interest_type || 'general',
+        player_message: player_message || null,
+        contacted: false,
+      })
+
+    if (error) {
+      console.error('Listing lead insert error:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Notify venue owner via Resend (fire-and-forget)
+    const resendKey = process.env.RESEND_API_KEY
+    if (resendKey) {
+      // Look up venue owner email
+      const { data: listing } = await supabase
+        .from('listings')
+        .select('name')
+        .eq('id', listing_id)
+        .single()
+
+      const { data: owner } = await supabase
+        .from('venue_owners')
+        .select('email, name')
+        .eq('listing_id', listing_id)
+        .single()
+
+      if (owner?.email) {
+        fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Padel Manual <hello@padelmanual.com>',
+            to: [owner.email],
+            subject: `New enquiry for ${listing?.name || 'your venue'}`,
+            text: [
+              `Hi${owner.name ? ' ' + owner.name : ''},`,
+              ``,
+              `You have a new player enquiry on Padel Manual:`,
+              ``,
+              `Name: ${player_name}`,
+              `Email: ${player_email}`,
+              `Interest: ${interest_type || 'General'}`,
+              player_message ? `Message: ${player_message}` : '',
+              ``,
+              `View all leads in your dashboard:`,
+              `https://padelmanual.com/venue/dashboard/leads`,
+              ``,
+              `—`,
+              `Padel Manual`,
+            ].filter(Boolean).join('\n'),
+          }),
+        }).catch(() => {})
+      }
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}

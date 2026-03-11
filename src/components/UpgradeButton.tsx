@@ -13,7 +13,6 @@ export default function UpgradeButton({
 
   async function handleUpgrade() {
     setLoading(true)
-    // POST to checkout — the server redirects to Stripe
     const form = document.createElement('form')
     form.method = 'POST'
     form.action = '/api/stripe/checkout'
@@ -25,7 +24,7 @@ export default function UpgradeButton({
     <button
       onClick={handleUpgrade}
       disabled={loading}
-      className={`btn-primary text-xs disabled:opacity-50 ${className}`}
+      className={`rounded-full bg-[#c4956a] text-white px-6 py-3 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90 disabled:opacity-50 w-full sm:w-auto text-center ${className}`}
     >
       {loading ? 'Redirecting...' : children || 'Upgrade for £29/mo →'}
     </button>

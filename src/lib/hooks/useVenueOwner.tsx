@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import type { Listing } from '@/lib/types'
 import type { User } from '@supabase/supabase-js'
@@ -30,6 +30,7 @@ type DashboardData = {
   isPremium: boolean
   isTrial: boolean
   loading: boolean
+  refresh: () => Promise<void>
 }
 
 function useVenueOwner(): DashboardData {
@@ -38,50 +39,52 @@ function useVenueOwner(): DashboardData {
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     const supabase = createClient()
 
-    async function load() {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (!authUser) {
-        setLoading(false)
-        return
-      }
-      setUser(authUser)
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) {
+      setLoading(false)
+      return
+    }
+    setUser(authUser)
 
-      const { data: ownerData } = await supabase
-        .from('venue_owners')
-        .select('*')
-        .eq('email', authUser.email!)
-        .single()
+    const { data: ownerData } = await supabase
+      .from('venue_owners')
+      .select('*')
+      .eq('email', authUser.email!)
+      .single()
 
-      if (ownerData) {
-        setOwner(ownerData as VenueOwner)
+    if (ownerData) {
+      setOwner(ownerData as VenueOwner)
 
-        if (ownerData.listing_id) {
-          const { data: listingData } = await supabase
-            .from('listings')
-            .select('*')
-            .eq('id', ownerData.listing_id)
-            .single()
+      if (ownerData.listing_id) {
+        const { data: listingData } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('id', ownerData.listing_id)
+          .single()
 
-          if (listingData) {
-            setListing(listingData as Listing)
-          }
+        if (listingData) {
+          setListing(listingData as Listing)
         }
       }
-
-      setLoading(false)
     }
 
-    load()
+    setLoading(false)
   }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const refresh = useCallback(async () => {
+    await load()
+  }, [load])
 
   const isPremium = owner?.subscription_status === 'premium'
   const isTrial = owner?.subscription_status === 'trial' &&
     (owner?.trial_ends_at ? new Date(owner.trial_ends_at) > new Date() : false)
 
-  return { user, owner, listing, isPremium, isTrial, loading }
+  return { user, owner, listing, isPremium, isTrial, loading, refresh }
 }
 
 // Context provider — wraps the dashboard shell so all pages share one data fetch
