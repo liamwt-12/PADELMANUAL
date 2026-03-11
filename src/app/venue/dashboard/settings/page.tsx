@@ -16,6 +16,12 @@ export default function SettingsPage() {
     router.push('/venue/login')
   }
 
+  async function handleDisconnectGBP() {
+    if (!confirm('Disconnect your Google Business Profile? You can reconnect anytime.')) return
+    await fetch('/api/gbp/disconnect', { method: 'POST' })
+    router.refresh()
+  }
+
   const planLabel = isPremium ? 'Premium' : isTrial ? 'Trial' : 'Free'
   const trialEnd = owner?.trial_ends_at
     ? new Date(owner.trial_ends_at).toLocaleDateString('en-GB', {
@@ -72,11 +78,32 @@ export default function SettingsPage() {
       <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-5 mb-6">
         <p className="label-caps mb-2">Google Business Profile</p>
         {owner?.gbp_connected_at ? (
-          <p className="text-sm text-emerald-600 font-medium">Connected</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 text-sm text-emerald-600 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Connected
+              </span>
+              <span className="text-xs text-pm-faint">
+                since {new Date(owner.gbp_connected_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
+            </div>
+            <button
+              onClick={handleDisconnectGBP}
+              className="text-xs text-pm-faint hover:text-red-500 transition-colors mt-3"
+            >
+              Disconnect Google Business Profile
+            </button>
+          </div>
         ) : (
           <div>
             <p className="text-sm text-pm-muted">Not connected</p>
-            <button className="btn-secondary text-xs mt-3">Connect Google Business Profile →</button>
+            <p className="text-xs text-pm-faint mt-1">
+              Connect to see search impressions, direction requests, and calls.
+            </p>
+            <a href="/api/gbp/connect" className="btn-secondary text-xs mt-3 inline-block">
+              Connect Google Business Profile →
+            </a>
           </div>
         )}
       </div>

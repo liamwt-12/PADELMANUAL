@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
 import UpgradeButton from '@/components/UpgradeButton'
+import GBPInsightsCard from '@/components/GBPInsightsCard'
 
 type Lead = {
   id: string
@@ -49,12 +50,12 @@ function StatCardCTA({ label, text, linkText }: {
   )
 }
 
-/* ── GBP connect card ── */
+/* ── GBP connect card (shown when not connected) ── */
 
 function GBPConnectCard() {
   return (
     <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-6 h-full flex flex-col">
-      <p className="label-caps mb-3">Google Reviews</p>
+      <p className="label-caps mb-3">Google Business Profile</p>
       <h3 className="font-serif text-base font-semibold tracking-tight">
         See how players find you on Google
       </h3>
@@ -62,9 +63,9 @@ function GBPConnectCard() {
         Connect your Google Business Profile to see your search impressions,
         direction requests, calls, and reviews — all in one place.
       </p>
-      <button className="btn-secondary text-xs mt-4 self-start">
+      <a href="/api/gbp/connect" className="btn-secondary text-xs mt-4 self-start">
         Connect Google Business Profile →
-      </button>
+      </a>
     </div>
   )
 }
@@ -132,10 +133,13 @@ export default function DashboardOverview() {
   const { listing, owner, isPremium, isTrial } = useDashboard()
   const searchParams = useSearchParams()
   const justUpgraded = searchParams.get('upgraded') === 'true'
+  const justConnectedGBP = searchParams.get('gbp') === 'connected'
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(justUpgraded)
+  const [showGBPBanner, setShowGBPBanner] = useState(justConnectedGBP)
   const [leads, setLeads] = useState<Lead[]>([])
   const [leadCount, setLeadCount] = useState(0)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [gbpSearches, setGbpSearches] = useState<number | null>(null)
 
   useEffect(() => {
     if (!listing) return
@@ -165,6 +169,15 @@ export default function DashboardOverview() {
       .eq('contacted', false)
       .then(({ count }) => setUnreadCount(count || 0))
   }, [listing])
+
+  // Fetch GBP searches for the stat card
+  useEffect(() => {
+    if (!owner?.gbp_connected_at) return
+    fetch('/api/gbp/insights')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.searches != null) setGbpSearches(data.searches) })
+      .catch(() => {})
+  }, [owner?.gbp_connected_at])
 
   return (
     <div>
@@ -201,6 +214,26 @@ export default function DashboardOverview() {
         </div>
       )}
 
+      {/* ── GBP connected banner ── */}
+      {showGBPBanner && (
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-emerald-900">Google Business Profile connected!</p>
+            <p className="text-xs text-emerald-700 mt-0.5">
+              Your search impressions, direction requests, and call data are now visible below.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowGBPBanner(false)}
+            className="text-emerald-400 hover:text-emerald-600 transition-colors shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard
@@ -221,22 +254,24 @@ export default function DashboardOverview() {
         {owner?.gbp_connected_at ? (
           <StatCard
             label="Google Searches"
-            value="—"
-            subtext="This month"
+            value={gbpSearches ?? '...'}
+            subtext="Last 28 days"
           />
         ) : (
-          <StatCardCTA
-            label="Google Searches"
-            text="Connect to see your data"
-            linkText="Connect Google →"
-          />
+          <a href="/api/gbp/connect" className="block">
+            <StatCardCTA
+              label="Google Searches"
+              text="Connect to see your data"
+              linkText="Connect Google →"
+            />
+          </a>
         )}
       </div>
 
       {/* ── Two-column: Leads + Google ── */}
       <div className="grid sm:grid-cols-2 gap-4 mb-6">
         <RecentLeadsCard leads={leads} totalCount={leadCount} />
-        <GBPConnectCard />
+        {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
       </div>
 
       {/* ── Listing preview ── */}

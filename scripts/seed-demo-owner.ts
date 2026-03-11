@@ -15,8 +15,8 @@ import { resolve } from 'path'
 
 dotenv.config({ path: resolve(__dirname, '../.env.local') })
 
-const DEMO_EMAIL = 'demo@padelmanual.com'
-const DEMO_NAME = 'Demo Owner'
+const DEMO_EMAIL = 'liamwt@hotmail.co.uk'
+const DEMO_NAME = 'Liam Watson'
 const VENUE_SLUG = 'rocket-padel-battersea' // Change to any real venue slug
 
 async function main() {
@@ -83,7 +83,7 @@ async function main() {
     .eq('id', listing.id)
 
   console.log(`Listing "${listing.name}" marked as claimed`)
-  console.log('\nDone! Log in at /venue/login with demo@padelmanual.com')
+  console.log(`\nDone! Log in at /venue/login with ${DEMO_EMAIL}`)
 }
 
 main()
