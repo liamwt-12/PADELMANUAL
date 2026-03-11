@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 export const revalidate = 3600;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // SEO-friendly filter definitions
 const FILTERS: Record<string, { title: string; description: string; query: (sb: any) => any }> = {
@@ -121,6 +116,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function RacketFilterPage({ params }: Props) {
+  const supabase = getSupabase();
   const { filter } = await params;
   const f = FILTERS[filter];
   if (!f) notFound();

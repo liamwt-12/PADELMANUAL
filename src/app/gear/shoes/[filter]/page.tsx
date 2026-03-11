@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 export const revalidate = 3600;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const FILTERS: Record<string, { title: string; description: string; where: Record<string, string> }> = {
   'all': { title: 'Best Padel Shoes UK 2026', description: 'Every padel shoe reviewed. Find the right fit for your game.', where: {} },
@@ -33,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ShoeFilterPage({ params }: Props) {
+  const supabase = getSupabase();
   const { filter } = await params;
   const f = FILTERS[filter];
   if (!f) notFound();

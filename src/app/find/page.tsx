@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import FindPageClient from './FindPageClient';
 
 export const metadata = {
@@ -8,12 +8,8 @@ export const metadata = {
 
 export const revalidate = 3600; // refresh data hourly
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default async function FindPage() {
+  const supabase = getSupabase();
   const { data: listings } = await supabase
     .from('listings')
     .select('id, name, slug, lat, lng, city, region, courts, indoor, booking_platform, playtomic_url, listing_type, claimed, premium, postcode, address')

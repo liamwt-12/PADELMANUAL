@@ -1,11 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getSupabase } from '@/lib/supabase';
 
 export default async function GearShowcase() {
+  const supabase = getSupabase();
   // Get 4 featured rackets with images
   const { data: products } = await supabase
     .from('gear_products')

@@ -10,12 +10,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Store in Supabase
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } }
     );
 
+    // 1. Store claim request (existing behaviour)
     const { error: insertError } = await supabase
       .from('claim_requests')
       .insert({
@@ -33,9 +34,73 @@ export async function POST(request: NextRequest) {
       console.error('Claim insert error:', insertError);
     }
 
-    // Send notification email via Resend (if key is set)
+    // 2. Look up listing to get its ID
+    const { data: listing } = await supabase
+      .from('listings')
+      .select('id')
+      .eq('slug', venue_slug)
+      .single();
+
+    // 3. Create venue_owners row (upsert by email)
+    if (listing) {
+      const { error: ownerError } = await supabase
+        .from('venue_owners')
+        .upsert(
+          {
+            email,
+            name,
+            listing_id: listing.id,
+            subscription_status: 'free',
+          },
+          { onConflict: 'email' }
+        );
+
+      if (ownerError) {
+        console.error('Venue owner upsert error:', ownerError);
+      }
+
+      // Mark listing as claimed
+      await supabase
+        .from('listings')
+        .update({ claimed: true })
+        .eq('id', listing.id);
+    }
+
+    // 4. Create auth user + generate magic link (if service role key available)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://padelmanual.com';
+    let magicLink: string | null = null;
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Create auth user (ignore error if already exists)
+      const { error: createUserError } = await supabase.auth.admin.createUser({
+        email,
+        email_confirm: true,
+      });
+
+      if (createUserError && !createUserError.message.includes('already been registered')) {
+        console.error('Create user error:', createUserError);
+      }
+
+      // Generate magic link
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email,
+        options: {
+          redirectTo: `${siteUrl}/venue/auth/callback`,
+        },
+      });
+
+      if (linkError) {
+        console.error('Generate link error:', linkError);
+      } else if (linkData?.properties?.action_link) {
+        magicLink = linkData.properties.action_link;
+      }
+    }
+
+    // 5. Send emails via Resend
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey) {
+      // Notify admin
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -50,7 +115,11 @@ export async function POST(request: NextRequest) {
         }),
       });
 
-      // Auto-reply to the claimer
+      // Auto-reply with magic link (if generated) or login link
+      const dashboardLine = magicLink
+        ? `\nYour dashboard is ready. Click the link below to sign in:\n${magicLink}\n\nThis link expires in 24 hours. You can always request a new one at:\n${siteUrl}/venue/login\n`
+        : `\nYou can sign in to your venue dashboard at:\n${siteUrl}/venue/login\n`;
+
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -61,7 +130,7 @@ export async function POST(request: NextRequest) {
           from: 'Padel Manual <hello@padelmanual.com>',
           to: [email],
           subject: `Your claim for ${venue_name} on Padel Manual`,
-          text: `Hi ${name},\n\nThanks for claiming ${venue_name} on Padel Manual.\n\nWe'll review your request and get back to you within 24 hours with next steps.\n\nIn the meantime, you can see your current listing here:\nhttps://www.padelmanual.com/${venue_slug}\n\nBest,\nPadel Manual\npadelmanual.com`,
+          text: `Hi ${name},\n\nThanks for claiming ${venue_name} on Padel Manual.\n${dashboardLine}\nYou can see your current listing here:\nhttps://www.padelmanual.com/${venue_slug}\n\nBest,\nPadel Manual\npadelmanual.com`,
         }),
       });
     }

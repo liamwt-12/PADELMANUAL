@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -8,12 +8,8 @@ export const metadata: Metadata = {
 
 export const revalidate = 86400; // daily
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default async function PadelCostPage() {
+  const supabase = getSupabase();
   // Get venue stats by city
   const { data: cityStats } = await supabase
     .from('listings')

@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // City editorial intros — add more as you go
 const cityIntros: Record<string, string> = {
@@ -37,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CityPage({ params }: Props) {
+  const supabase = getSupabase();
   const { city: slug } = await params;
   // Convert URL slug to city name: "manchester" -> "Manchester"
   const cityName = decodeURIComponent(slug).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());

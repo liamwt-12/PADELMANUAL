@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 export const revalidate = 3600;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const FILTERS: Record<string, { title: string; description: string; brand?: string }> = {
   'all': { title: 'Best Padel Bags UK 2026', description: 'Every padel bag reviewed. Racket bags, backpacks, and paleteros from top brands.' },
@@ -29,6 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BagFilterPage({ params }: Props) {
+  const supabase = getSupabase();
   const { filter } = await params;
   const f = FILTERS[filter];
   if (!f) notFound();

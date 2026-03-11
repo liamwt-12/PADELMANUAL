@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,11 +7,6 @@ export const metadata: Metadata = {
 };
 
 export const revalidate = 3600;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // Hand-picked top venues with editorial commentary
 const TOP_PICKS = [
@@ -58,6 +53,7 @@ const TOP_PICKS = [
 ];
 
 export default async function BestLondonPage() {
+  const supabase = getSupabase();
   // Fetch the actual venue data for our picks
   const slugs = TOP_PICKS.map(p => p.slug);
   const { data: venues } = await supabase

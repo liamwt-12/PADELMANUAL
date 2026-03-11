@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 export const revalidate = 3600;
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // Postcode area to friendly name mapping
 const AREA_NAMES: Record<string, string> = {
@@ -65,6 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PostcodeAreaPage({ params }: Props) {
+  const supabase = getSupabase();
   const { area } = await params;
   const upper = area.toUpperCase();
   const name = AREA_NAMES[upper] || upper;

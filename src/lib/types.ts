@@ -19,9 +19,17 @@ export type Listing = {
   booking_platform?: string | null;
   playtomic_url?: string | null;
   playtomic_slug?: string | null;
+  playtomic_tenant_id?: string | null;
   source?: string | null;
   claimed?: boolean;
   premium?: boolean;
+  view_count?: number;
+  click_count?: number;
+  last_viewed_at?: string | null;
+  images?: string[] | null;
+  opening_hours_text?: string | null;
+  phone?: string | null;
+  email?: string | null;
   
   // Old schema fields (still used by London pages)
   type?: ListingType;

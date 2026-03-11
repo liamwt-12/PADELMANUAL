@@ -1,17 +1,13 @@
 import { getVenueCount, getCoachCount, getCourtTotal, getTopCities, getFeaturedVenues } from "@/lib/db";
 import { gearItems } from "@/lib/gear";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabase } from "@/lib/supabase";
 import HomeSearch from "./HomeSearch";
 import GearShowcase from "./GearShowcase";
 
 export const revalidate = 3600;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default async function Home() {
+  const supabase = getSupabase();
   const [venueCount, coachCount, courtTotal, topCities, featuredVenues] = await Promise.all([
     getVenueCount(),
     getCoachCount(),

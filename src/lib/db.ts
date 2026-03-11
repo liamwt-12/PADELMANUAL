@@ -1,10 +1,10 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 import type { Listing, ListingType } from "./types";
 
 /* ── National queries (new 528+ venue data) ── */
 
 export async function getVenueCount() {
-  const { count, error } = await supabase
+  const { count, error } = await getSupabase()
     .from("listings")
     .select("*", { count: "exact", head: true })
     .eq("listing_type", "venue");
@@ -13,7 +13,7 @@ export async function getVenueCount() {
 }
 
 export async function getCoachCount() {
-  const { count, error } = await supabase
+  const { count, error } = await getSupabase()
     .from("listings")
     .select("*", { count: "exact", head: true })
     .eq("listing_type", "coach");
@@ -22,7 +22,7 @@ export async function getCoachCount() {
 }
 
 export async function getCourtTotal() {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("courts")
     .not("courts", "is", null);
@@ -31,7 +31,7 @@ export async function getCourtTotal() {
 }
 
 export async function getVenuesByCity(city: string) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("city", city)
@@ -41,7 +41,7 @@ export async function getVenuesByCity(city: string) {
 }
 
 export async function getTopCities(limit = 10) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("city")
     .not("city", "is", null)
@@ -59,7 +59,7 @@ export async function getTopCities(limit = 10) {
 }
 
 export async function getRecentVenues(limit = 6) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("listing_type", "venue")
@@ -72,7 +72,7 @@ export async function getRecentVenues(limit = 6) {
 
 export async function getFeaturedVenues(limit = 4) {
   // Get venues with the most courts as a proxy for "featured"
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("listing_type", "venue")
@@ -86,7 +86,7 @@ export async function getFeaturedVenues(limit = 4) {
 /* ── Legacy queries (for existing London pages) ── */
 
 export async function getFeatured(city: string) {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("city", city)
@@ -101,7 +101,7 @@ export async function getFeatured(city: string) {
 export async function getListingsByType(city: string, type: ListingType) {
   // Try new schema first (listing_type: venue/coach)
   const mappedType = type === "court" ? "venue" : type;
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("city", city)
@@ -111,7 +111,7 @@ export async function getListingsByType(city: string, type: ListingType) {
   if (!error && data && data.length > 0) return data as Listing[];
 
   // Fall back to old schema
-  const { data: legacyData, error: legacyError } = await supabase
+  const { data: legacyData, error: legacyError } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("city", city)
@@ -124,7 +124,7 @@ export async function getListingsByType(city: string, type: ListingType) {
 
 export async function getListingBySlug(slug: string) {
   // Try without status filter first (new data doesn't have status)
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("slug", slug)
@@ -135,7 +135,7 @@ export async function getListingBySlug(slug: string) {
 
 export async function getAllListings(city: string) {
   // Try new schema (no status filter)
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("listings")
     .select("*")
     .eq("city", city)
@@ -145,7 +145,7 @@ export async function getAllListings(city: string) {
 }
 
 export async function getListingCount(city: string) {
-  const { count, error } = await supabase
+  const { count, error } = await getSupabase()
     .from("listings")
     .select("*", { count: "exact", head: true })
     .eq("city", city);

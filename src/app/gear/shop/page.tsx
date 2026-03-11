@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase';
 import GearShopClient from './GearShopClient';
 import type { Metadata } from 'next';
 
@@ -9,12 +9,8 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600;
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default async function GearShopPage() {
+  const supabase = getSupabase();
   const { data: products } = await supabase
     .from('gear_products')
     .select('*')

@@ -42,7 +42,11 @@ export default function ClaimForm({ venueName, venueSlug, isCoach }: Props) {
         <div className="text-2xl mb-2">✓</div>
         <h3 className="font-serif text-lg font-semibold tracking-tight text-emerald-800">Claim submitted</h3>
         <p className="mt-2 text-sm text-emerald-700">
-          We&apos;ll review your claim for {venueName} and email you within 24 hours.
+          Check your email for a link to access your venue dashboard.
+        </p>
+        <p className="mt-3 text-xs text-pm-faint">
+          Already have an account?{' '}
+          <a href="/venue/login" className="text-pm-accent hover:underline">Sign in here</a>
         </p>
       </section>
     );

@@ -1,13 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getSupabase } from '@/lib/supabase';
 
 const BASE = 'https://www.padelmanual.com';
 
 export async function GET() {
+  const supabase = getSupabase();
   const { data: listings } = await supabase
     .from('listings')
     .select('slug, city')

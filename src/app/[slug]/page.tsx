@@ -55,7 +55,7 @@ function RelatedCard({ listing }: { listing: Listing }) {
           {listing.indoor === true ? 'Indoor' : listing.indoor === false ? 'Outdoor' : ''}
           {listing.courts ? `${listing.indoor !== null ? ' · ' : ''}${listing.courts} courts` : ''}
         </span>
-        {(listing as any).playtomic_tenant_id && (
+        {listing.playtomic_tenant_id && (
           <span className="flex items-center gap-1 text-[10px] text-emerald-600">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             Live
@@ -84,10 +84,10 @@ export default async function ListingPage({ params }: Props) {
   const related = city ? await getVenuesByCity(city) : [];
   const others = related.filter((l) => l.slug !== slug).slice(0, 4);
 
-  const tenantId = (listing as any).playtomic_tenant_id as string | null;
+  const tenantId = listing.playtomic_tenant_id ?? null;
   const playtomicUrl = listing.playtomic_url || null;
-  const lat = (listing as any).lat;
-  const lng = (listing as any).lng;
+  const lat = listing.lat ?? null;
+  const lng = listing.lng ?? null;
 
   return (
     <main className="pb-10">
