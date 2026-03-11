@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { VenueOwnerProvider, useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
+import UpgradeButton from '@/components/UpgradeButton'
 
 /* ── Icons (Heroicons outline, 18×18) ── */
 
@@ -135,9 +136,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                   Unlock your full dashboard — analytics, leads, Google insights, and more.
                 </p>
               </div>
-              <button className="btn-primary text-xs whitespace-nowrap self-start sm:self-center">
-                Upgrade for £29/mo →
-              </button>
+              <UpgradeButton className="whitespace-nowrap self-start sm:self-center" />
             </div>
           )}
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
+import UpgradeButton from '@/components/UpgradeButton'
 
 type Lead = {
   id: string
@@ -66,7 +67,7 @@ export default function LeadsPage() {
           <p className="mt-2 text-sm text-pm-muted max-w-sm mx-auto">
             Upgrade to Premium to see player enquiries, contact details, and mark leads as contacted.
           </p>
-          <button className="btn-primary text-xs mt-4">Upgrade for £29/mo →</button>
+          <UpgradeButton className="mt-4" />
         </div>
       )}
 

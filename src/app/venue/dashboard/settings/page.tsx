@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
+import UpgradeButton from '@/components/UpgradeButton'
+import ManageBillingButton from '@/components/ManageBillingButton'
 
 export default function SettingsPage() {
   const { user, owner, listing, isPremium, isTrial } = useDashboard()
@@ -61,9 +63,8 @@ export default function SettingsPage() {
               <p className="text-xs text-pm-faint mt-0.5">Full analytics, leads, Google insights</p>
             )}
           </div>
-          {!isPremium && (
-            <button className="btn-primary text-xs">Upgrade for £29/mo →</button>
-          )}
+          {!isPremium && !isTrial && <UpgradeButton />}
+          {isPremium && owner?.stripe_customer_id && <ManageBillingButton />}
         </div>
       </div>
 

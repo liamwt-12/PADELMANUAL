@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
+import UpgradeButton from '@/components/UpgradeButton'
 
 type Lead = {
   id: string
@@ -128,6 +130,9 @@ function RecentLeadsCard({ leads, totalCount }: { leads: Lead[]; totalCount: num
 
 export default function DashboardOverview() {
   const { listing, owner, isPremium, isTrial } = useDashboard()
+  const searchParams = useSearchParams()
+  const justUpgraded = searchParams.get('upgraded') === 'true'
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(justUpgraded)
   const [leads, setLeads] = useState<Lead[]>([])
   const [leadCount, setLeadCount] = useState(0)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -175,6 +180,26 @@ export default function DashboardOverview() {
           {isPremium ? 'Premium' : isTrial ? 'Trial' : 'Free plan'}
         </p>
       </div>
+
+      {/* ── Upgrade success banner ── */}
+      {showUpgradeBanner && (
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-emerald-900">Welcome to Premium!</p>
+            <p className="text-xs text-emerald-700 mt-0.5">
+              Your subscription is active. Full analytics, leads, and Google insights are now unlocked.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowUpgradeBanner(false)}
+            className="text-emerald-400 hover:text-emerald-600 transition-colors shrink-0"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
