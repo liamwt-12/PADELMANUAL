@@ -1,5 +1,4 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -9,19 +8,19 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') as 'magiclink' | 'signup' | 'recovery' | null
   const next = searchParams.get('next') ?? '/venue/dashboard'
 
-  const cookieStore = await cookies()
+  // Accumulate cookies so we can apply them to the final redirect response
+  const cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[] = []
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll()
+          return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+        setAll(cookies) {
+          cookiesToSet.push(...cookies)
         },
       },
     }
@@ -30,21 +29,26 @@ export async function GET(request: NextRequest) {
   let authError = null
 
   if (code) {
-    // PKCE flow — exchange code for session
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     authError = error
   } else if (token_hash && type) {
-    // Email link flow — verify OTP directly
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     authError = error
   } else {
     authError = { message: 'No code or token_hash provided' }
   }
 
-  if (!authError) {
-    return NextResponse.redirect(new URL(next, request.url))
+  if (authError) {
+    console.error('Auth callback error:', JSON.stringify(authError))
+    console.error('Params — code:', !!code, 'token_hash:', !!token_hash, 'type:', type)
+    return NextResponse.redirect(new URL('/venue/login?error=auth', request.url))
   }
 
-  console.error('Auth callback error:', authError)
-  return NextResponse.redirect(new URL('/venue/login?error=auth', request.url))
+  // Redirect to dashboard and explicitly attach session cookies to the response
+  const response = NextResponse.redirect(new URL(next, request.url))
+  for (const { name, value, options } of cookiesToSet) {
+    response.cookies.set(name, value, options)
+  }
+
+  return response
 }

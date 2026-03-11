@@ -23,6 +23,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Skip auth routes — they establish their own sessions
+  if (
+    request.nextUrl.pathname.startsWith('/venue/auth/callback') ||
+    request.nextUrl.pathname.startsWith('/venue/dev-login')
+  ) {
+    return NextResponse.next()
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protect dashboard routes — redirect to login if not authenticated
