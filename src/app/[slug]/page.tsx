@@ -129,6 +129,16 @@ export default async function ListingPage({ params }: Props) {
         </div>
       </section>
 
+      {/* ── Announcement Banner ── */}
+      {listing.announcement && (
+        <section className="mb-6">
+          <div className="rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.04] px-5 py-4 flex items-start gap-3">
+            <span className="text-pm-accent text-sm mt-0.5">📌</span>
+            <p className="text-sm text-pm-text leading-relaxed">{listing.announcement}</p>
+          </div>
+        </section>
+      )}
+
       {/* ── Google Places: Photos, Rating, Reviews ── */}
       {city && (
         <section className="mb-6">
@@ -180,8 +190,29 @@ export default async function ListingPage({ params }: Props) {
         </section>
       )}
 
-      {/* ── Lead Capture (claimed venues only) ── */}
-      {listing.claimed && isVenue && (
+      {/* ── YouTube Video ── */}
+      {listing.youtube_video_url && (() => {
+        const match = listing.youtube_video_url!.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/)
+        const videoId = match?.[1]
+        return videoId ? (
+          <section className="mb-6">
+            <div className="rounded-2xl overflow-hidden border border-pm-border/30 aspect-video">
+              <iframe
+                src={`https://www.youtube.com/embed/${videoId}`}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            </div>
+          </section>
+        ) : null
+      })()}
+
+      {/* ── Lead Capture (all venues) ── */}
+      {isVenue && (
         <section className="mb-6">
           <LeadCaptureForm listingId={listing.id} venueName={listing.name} />
         </section>

@@ -30,6 +30,8 @@ export type Listing = {
   opening_hours_text?: string | null;
   phone?: string | null;
   email?: string | null;
+  youtube_video_url?: string | null;
+  announcement?: string | null;
   
   // Old schema fields (still used by London pages)
   type?: ListingType;

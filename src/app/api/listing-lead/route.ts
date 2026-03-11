@@ -32,13 +32,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Notify venue owner via Resend (fire-and-forget)
+    // Look up listing details
     const resendKey = process.env.RESEND_API_KEY
     if (resendKey) {
-      // Look up venue owner email
       const { data: listing } = await supabase
         .from('listings')
-        .select('name')
+        .select('name, slug, claimed')
         .eq('id', listing_id)
         .single()
 
@@ -48,7 +47,18 @@ export async function POST(req: NextRequest) {
         .eq('listing_id', listing_id)
         .single()
 
-      if (owner?.email) {
+      const venueName = listing?.name || 'a venue'
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.padelmanual.com'
+
+      const leadDetails = [
+        `Name: ${player_name}`,
+        `Email: ${player_email}`,
+        `Interest: ${interest_type || 'General'}`,
+        player_message ? `Message: ${player_message}` : '',
+      ].filter(Boolean).join('\n')
+
+      if (owner?.email && listing?.claimed) {
+        // Claimed venue — notify the owner
         fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -58,23 +68,44 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             from: 'Padel Manual <hello@padelmanual.com>',
             to: [owner.email],
-            subject: `New enquiry for ${listing?.name || 'your venue'}`,
+            subject: `New enquiry for ${venueName}`,
             text: [
               `Hi${owner.name ? ' ' + owner.name : ''},`,
               ``,
               `You have a new player enquiry on Padel Manual:`,
               ``,
-              `Name: ${player_name}`,
-              `Email: ${player_email}`,
-              `Interest: ${interest_type || 'General'}`,
-              player_message ? `Message: ${player_message}` : '',
+              leadDetails,
               ``,
               `View all leads in your dashboard:`,
-              `https://padelmanual.com/venue/dashboard/leads`,
+              `${siteUrl}/venue/dashboard/leads`,
               ``,
               `—`,
               `Padel Manual`,
-            ].filter(Boolean).join('\n'),
+            ].join('\n'),
+          }),
+        }).catch(() => {})
+      } else {
+        // Unclaimed venue — notify hello@ as a warm sales trigger
+        fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Padel Manual <hello@padelmanual.com>',
+            to: ['hello@padelmanual.com'],
+            subject: `Lead for unclaimed venue: ${venueName}`,
+            text: [
+              `A player enquired about an unclaimed venue:`,
+              ``,
+              `Venue: ${venueName}`,
+              `Listing: ${siteUrl}/${listing?.slug || ''}`,
+              ``,
+              leadDetails,
+              ``,
+              `This venue has no owner yet — reach out to claim it for them.`,
+            ].join('\n'),
           }),
         }).catch(() => {})
       }
