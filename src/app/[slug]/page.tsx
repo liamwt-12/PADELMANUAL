@@ -203,14 +203,6 @@ export default async function ListingPage({ params }: Props) {
         </section>
       )}
 
-      {/* ── See Premium Demo ── */}
-      {!listing.claimed && (
-        <section className="mt-8 text-center">
-          <a href="/demo" className="text-xs text-pm-faint hover:text-pm-accent transition-colors">
-            See what a premium listing looks like →
-          </a>
-        </section>
-      )}
     </main>
   );
 }

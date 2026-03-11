@@ -81,19 +81,16 @@ export async function POST(request: NextRequest) {
         console.error('Create user error:', createUserError);
       }
 
-      // Generate magic link
+      // Generate magic link (use token_hash for direct verification, not action_link)
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
         email,
-        options: {
-          redirectTo: `${siteUrl}/venue/auth/callback`,
-        },
       });
 
       if (linkError) {
         console.error('Generate link error:', linkError);
-      } else if (linkData?.properties?.action_link) {
-        magicLink = linkData.properties.action_link;
+      } else if (linkData?.properties?.hashed_token) {
+        magicLink = `${siteUrl}/venue/auth/callback?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=magiclink`;
       }
     }
 
@@ -116,9 +113,9 @@ export async function POST(request: NextRequest) {
       });
 
       // Auto-reply with magic link (if generated) or login link
-      const dashboardLine = magicLink
-        ? `\nYour dashboard is ready. Click the link below to sign in:\n${magicLink}\n\nThis link expires in 24 hours. You can always request a new one at:\n${siteUrl}/venue/login\n`
-        : `\nYou can sign in to your venue dashboard at:\n${siteUrl}/venue/login\n`;
+      const dashboardSection = magicLink
+        ? `Sign in to your venue dashboard:\n\n${magicLink}\n\nThis link expires in 24 hours. You can always request a new one at:\n${siteUrl}/venue/login`
+        : `Sign in to your venue dashboard at:\n${siteUrl}/venue/login`;
 
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -129,8 +126,20 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           from: 'Padel Manual <hello@padelmanual.com>',
           to: [email],
-          subject: `Your claim for ${venue_name} on Padel Manual`,
-          text: `Hi ${name},\n\nThanks for claiming ${venue_name} on Padel Manual.\n${dashboardLine}\nYou can see your current listing here:\nhttps://www.padelmanual.com/${venue_slug}\n\nBest,\nPadel Manual\npadelmanual.com`,
+          subject: 'Your Padel Manual dashboard link',
+          text: [
+            `Hi ${name},`,
+            ``,
+            `Thanks for claiming ${venue_name} on Padel Manual.`,
+            ``,
+            dashboardSection,
+            ``,
+            `Your listing: https://www.padelmanual.com/${venue_slug}`,
+            ``,
+            `—`,
+            `Padel Manual`,
+            `padelmanual.com`,
+          ].join('\n'),
         }),
       });
     }

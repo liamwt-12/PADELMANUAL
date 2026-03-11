@@ -44,8 +44,8 @@ export default function MobileNav() {
               </a>
             ))}
             <div className="pt-3 mt-3 border-t border-pm-border/40">
-              <a href="/demo" className="block py-2.5 text-sm font-medium text-pm-accent">
-                See a premium listing →
+              <a href="/venue/login" className="block py-2.5 text-sm font-medium text-pm-accent">
+                Venue owners →
               </a>
             </div>
           </nav>

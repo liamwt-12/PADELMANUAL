@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase-browser'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -14,16 +13,16 @@ export default function LoginForm() {
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/venue/auth/callback`,
-      },
+    const res = await fetch('/api/auth/magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
     })
 
-    if (error) {
-      setError('Something went wrong. Please try again.')
+    const data = await res.json()
+
+    if (!res.ok) {
+      setError(data.error || 'Something went wrong. Please try again.')
       setLoading(false)
       return
     }
