@@ -7,6 +7,8 @@ const TO = 'hello@padelmanual.com'
 const VENUE_NAME = 'The Padel Club London'
 const SITE_URL = 'https://www.padelmanual.com'
 
+const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+
 async function send(
   resendKey: string,
   from: string,
@@ -49,11 +51,13 @@ export async function POST(request: NextRequest) {
   })
   const r1 = await send(resendKey, 'Liam at Padel Manual <hello@padelmanual.com>', outreach.subject, outreach.text)
   results.push({ email: 'outreach', subject: outreach.subject, status: r1.ok ? 'sent' : 'failed', error: r1.error })
+  await delay(600)
 
   // 2. Featured venue trial email
   const featured = featuredTrialEmail({ venueName: VENUE_NAME })
   const r2 = await send(resendKey, 'Liam at Padel Manual <hello@padelmanual.com>', featured.subject, featured.text)
   results.push({ email: 'featured_trial', subject: featured.subject, status: r2.ok ? 'sent' : 'failed', error: r2.error })
+  await delay(600)
 
   // 3. Trial follow-up (day 6)
   const followup = trialFollowupEmail({
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
   })
   const r3 = await send(resendKey, 'Liam at Padel Manual <hello@padelmanual.com>', followup.subject, followup.text)
   results.push({ email: 'trial_followup', subject: followup.subject, status: r3.ok ? 'sent' : 'failed', error: r3.error })
+  await delay(600)
 
   // 4. Weekly stats email (premium owner)
   const weeklySubject = `Weekly stats for ${VENUE_NAME}`
@@ -89,6 +94,7 @@ export async function POST(request: NextRequest) {
   ].join('\n')
   const r4 = await send(resendKey, 'Padel Manual <hello@padelmanual.com>', weeklySubject, weeklyText)
   results.push({ email: 'weekly_stats', subject: weeklySubject, status: r4.ok ? 'sent' : 'failed', error: r4.error })
+  await delay(600)
 
   // 5. New lead notification
   const leadSubject = `New enquiry for ${VENUE_NAME}`
@@ -110,6 +116,7 @@ export async function POST(request: NextRequest) {
   ].join('\n')
   const r5 = await send(resendKey, 'Padel Manual <hello@padelmanual.com>', leadSubject, leadText)
   results.push({ email: 'new_lead', subject: leadSubject, status: r5.ok ? 'sent' : 'failed', error: r5.error })
+  await delay(600)
 
   // 6. Venue submission confirmation
   const submissionSubject = `We've received your venue submission`
