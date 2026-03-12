@@ -87,6 +87,9 @@ export async function POST(request: NextRequest) {
         quantity: 1,
       },
     ],
+    custom_text: {
+      submit: { message: 'Padel Manual Business — premium venue dashboard. Cancel anytime.' },
+    },
     success_url: `${siteUrl}/venue/dashboard?upgraded=true`,
     cancel_url: `${siteUrl}/venue/dashboard/settings`,
     metadata: {
