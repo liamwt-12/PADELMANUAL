@@ -191,11 +191,11 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         <div className="flex-1 min-w-0 pb-24 sm:pb-0">
           {/* Upgrade banner — every page, free users only */}
           {!isPremium && !isTrial && (
-            <div className="mb-8 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-[3px] border-l-pm-accent">
+            <div className="mb-8 rounded-2xl border border-pm-border/60 bg-pm-bg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-pm-accent">
               <div>
-                <p className="text-sm font-medium text-pm-text">You&apos;re on the free plan.</p>
+                <p className="text-sm font-medium text-pm-text">Get more from your listing.</p>
                 <p className="text-xs text-pm-muted mt-0.5">
-                  Unlock your full dashboard — analytics, leads, Google insights, and more.
+                  Unlock analytics, player leads, Google insights, and weekly reports.
                 </p>
               </div>
               <UpgradeButton className="whitespace-nowrap self-start sm:self-center" />
