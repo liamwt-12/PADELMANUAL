@@ -94,6 +94,17 @@ export default async function ListingPage({ params }: Props) {
     <main className="pb-10">
       <ViewTracker slug={slug} />
       <ListingSchema name={listing.name} city={city} postcode={listing.postcode} address={listing.address || null} lat={lat} lng={lng} courts={courts} indoor={listing.indoor ?? null} website={listing.website_url || null} slug={slug} />
+
+      {/* ── Permanently closed banner ── */}
+      {listing.permanently_closed && (
+        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50/50 px-6 py-4">
+          <p className="text-sm font-medium text-red-800">This venue is permanently closed.</p>
+          <p className="mt-1 text-xs text-red-600">
+            This listing is kept for reference. <a href="/find" className="underline">Find other venues nearby →</a>
+          </p>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <section className="pt-6 pb-4">
         <a href="/find" className="text-xs text-pm-faint hover:text-pm-text transition-colors">← All venues</a>

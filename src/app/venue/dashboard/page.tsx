@@ -104,6 +104,17 @@ function GBPConnectCard() {
           >
             Connect Google Business Profile
           </a>
+          <p className="mt-4 text-xs text-pm-faint leading-relaxed">
+            Don&apos;t have a Google Business Profile yet? It&apos;s free and takes 5 minutes.{' '}
+            <a
+              href="https://business.google.com/create"
+              target="_blank"
+              rel="noreferrer"
+              className="text-pm-accent hover:underline"
+            >
+              Set up Google Business Profile →
+            </a>
+          </p>
         </div>
 
         {/* Blurred placeholder metrics — FOMO */}
@@ -349,13 +360,25 @@ export default function DashboardOverview() {
         {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
       </div>
 
-      {/* ── Court Utilisation (Playtomic venues, premium only) ── */}
-      {(isPremium || isTrial) && listing?.playtomic_tenant_id && (
+      {/* ── Court Utilisation ── */}
+      {(isPremium || isTrial) && (
         <div className="mb-6">
-          <CourtUtilisationCard
-            tenantId={listing.playtomic_tenant_id}
-            totalCourts={listing.courts ?? listing.courts_count ?? 1}
-          />
+          {listing?.playtomic_tenant_id ? (
+            <CourtUtilisationCard
+              tenantId={listing.playtomic_tenant_id}
+              totalCourts={listing.courts ?? listing.courts_count ?? 1}
+            />
+          ) : (
+            <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
+              <p className="label-caps mb-3">Court Utilisation</p>
+              <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
+                Court utilisation data isn&apos;t available for your venue yet. If you&apos;re on Playtomic,
+                add your venue URL in{' '}
+                <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>{' '}
+                and we&apos;ll connect it automatically.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

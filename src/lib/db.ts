@@ -7,7 +7,8 @@ export async function getVenueCount() {
   const { count, error } = await getSupabase()
     .from("listings")
     .select("*", { count: "exact", head: true })
-    .eq("listing_type", "venue");
+    .eq("listing_type", "venue")
+    .neq("permanently_closed", true);
   if (error) return 0;
   return count ?? 0;
 }
@@ -35,6 +36,7 @@ export async function getVenuesByCity(city: string) {
     .from("listings")
     .select("*")
     .eq("city", city)
+    .neq("permanently_closed", true)
     .order("name");
   if (error) return [];
   return (data ?? []) as Listing[];
@@ -45,7 +47,8 @@ export async function getTopCities(limit = 10) {
     .from("listings")
     .select("city")
     .not("city", "is", null)
-    .eq("listing_type", "venue");
+    .eq("listing_type", "venue")
+    .neq("permanently_closed", true);
   if (error || !data) return [];
   
   const counts: Record<string, number> = {};
@@ -63,6 +66,7 @@ export async function getRecentVenues(limit = 6) {
     .from("listings")
     .select("*")
     .eq("listing_type", "venue")
+    .neq("permanently_closed", true)
     .not("lat", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);

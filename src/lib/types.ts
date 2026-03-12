@@ -32,7 +32,9 @@ export type Listing = {
   email?: string | null;
   youtube_video_url?: string | null;
   announcement?: string | null;
-  
+  permanently_closed?: boolean;
+  closed_at?: string | null;
+
   // Old schema fields (still used by London pages)
   type?: ListingType;
   area?: string | null;
