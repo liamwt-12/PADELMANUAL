@@ -40,9 +40,9 @@ export default function CourtUtilisationCard({ tenantId, totalCourts }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-6">
-        <p className="label-caps mb-3">Court Utilisation</p>
-        <div className="flex items-center justify-center py-8">
+      <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
+        <p className="label-caps mb-4">Court Utilisation</p>
+        <div className="flex items-center justify-center py-10">
           <div className="w-5 h-5 border-2 border-pm-accent border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
@@ -54,38 +54,40 @@ export default function CourtUtilisationCard({ tenantId, totalCourts }: Props) {
   const avgPct = Math.round(days.reduce((sum, d) => sum + d.pct, 0) / days.length)
 
   return (
-    <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
+      <div className="flex items-center justify-between mb-6">
         <p className="label-caps">Court Utilisation</p>
         <span className="text-[10px] text-pm-faint">Next 7 days</span>
       </div>
 
-      {/* Average utilisation */}
-      <div className="mb-5 text-center">
-        <p className="font-serif text-3xl font-bold tracking-tight">{avgPct}%</p>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Avg booked</p>
-      </div>
+      <div className="sm:flex sm:items-end sm:gap-10">
+        {/* Average */}
+        <div className="mb-6 sm:mb-0 sm:shrink-0">
+          <p className="font-serif text-5xl font-bold tracking-tight text-pm-text">{avgPct}%</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Avg booked</p>
+        </div>
 
-      {/* Daily bars */}
-      <div className="flex items-end gap-1.5 h-20">
-        {days.map(d => (
-          <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-            <div className="w-full bg-pm-bg-hover rounded-sm overflow-hidden" style={{ height: '60px' }}>
-              <div
-                className="w-full rounded-sm transition-all duration-500"
-                style={{
-                  height: `${d.pct}%`,
-                  marginTop: `${100 - d.pct}%`,
-                  backgroundColor: d.pct > 80 ? '#059669' : d.pct > 50 ? '#c4956a' : '#d6d3cd',
-                }}
-              />
+        {/* Daily bars */}
+        <div className="flex items-end gap-2 h-24 flex-1">
+          {days.map(d => (
+            <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
+              <div className="w-full bg-pm-bg-hover rounded overflow-hidden" style={{ height: '72px' }}>
+                <div
+                  className="w-full rounded transition-all duration-500"
+                  style={{
+                    height: `${d.pct}%`,
+                    marginTop: `${100 - d.pct}%`,
+                    backgroundColor: d.pct > 80 ? '#059669' : d.pct > 50 ? '#c4956a' : '#d6d3cd',
+                  }}
+                />
+              </div>
+              <span className="text-[9px] text-pm-faint font-medium">{d.label}</span>
             </div>
-            <span className="text-[9px] text-pm-faint font-medium">{d.label}</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      <p className="mt-4 text-[10px] text-pm-faint text-center">
+      <p className="mt-6 text-[10px] text-pm-faint">
         Based on Playtomic availability · {totalCourts} court{totalCourts !== 1 ? 's' : ''}
       </p>
     </div>

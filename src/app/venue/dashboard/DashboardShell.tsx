@@ -41,6 +41,14 @@ function IconSettings({ className = '' }: { className?: string }) {
   )
 }
 
+function IconBack({ className = '' }: { className?: string }) {
+  return (
+    <svg className={`w-[14px] h-[14px] ${className}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+    </svg>
+  )
+}
+
 const navItems = [
   { label: 'Overview', href: '/venue/dashboard', icon: IconOverview },
   { label: 'Your Listing', href: '/venue/dashboard/listing', icon: IconListing },
@@ -51,14 +59,14 @@ const navItems = [
 /* ── Shell inner (inside provider) ── */
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { owner, isPremium, isTrial, loading } = useDashboard()
+  const { owner, listing, isPremium, isTrial, loading } = useDashboard()
   const pathname = usePathname()
   const router = useRouter()
 
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/venue/login')
+    router.push('/')
   }
 
   if (loading) {
@@ -87,13 +95,29 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(href)
   }
 
+  const planLabel = isPremium ? 'Premium' : isTrial ? 'Trial' : 'Free'
+
   return (
-    <div className="py-6">
-      <div className="flex gap-8">
+    <div className="py-8">
+      <div className="flex gap-10">
         {/* ── Desktop sidebar ── */}
-        <nav className="hidden sm:block w-44 shrink-0">
-          <p className="label-caps mb-4">Menu</p>
-          <ul className="space-y-0.5">
+        <nav className="hidden sm:flex sm:flex-col w-56 shrink-0">
+          {/* Brand */}
+          <div className="mb-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-pm-text/40">
+              Padel Manual
+            </p>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 mt-2 text-[11px] text-pm-faint hover:text-pm-accent transition-colors"
+            >
+              <IconBack />
+              Back to site
+            </Link>
+          </div>
+
+          {/* Nav items */}
+          <ul className="space-y-1 flex-1">
             {navItems.map(item => {
               const active = isActive(item.href)
               const Icon = item.icon
@@ -101,10 +125,10 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg px-3 py-3 text-[13px] transition-all ${
                       active
-                        ? 'text-pm-text font-medium bg-pm-bg-hover'
-                        : 'text-pm-muted hover:text-pm-text hover:bg-pm-bg-hover'
+                        ? 'text-pm-accent font-medium border-l-2 border-pm-accent -ml-px'
+                        : 'text-pm-muted hover:text-pm-text'
                     }`}
                   >
                     <Icon className={active ? 'text-pm-accent' : ''} />
@@ -115,10 +139,20 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             })}
           </ul>
 
-          <div className="mt-8 pt-4 border-t border-pm-border/40">
+          {/* Bottom: venue info + sign out */}
+          <div className="mt-auto pt-6 border-t border-pm-border/40">
+            <p className="text-xs font-medium text-pm-text truncate">
+              {listing?.name || 'Your Venue'}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${
+                isPremium ? 'bg-pm-accent' : isTrial ? 'bg-amber-400' : 'bg-pm-ash'
+              }`} />
+              <span className="text-[10px] text-pm-faint">{planLabel}</span>
+            </div>
             <button
               onClick={handleSignOut}
-              className="text-xs text-pm-faint hover:text-pm-text transition-colors"
+              className="mt-4 text-[11px] text-pm-faint hover:text-pm-text transition-colors"
             >
               Sign out
             </button>
@@ -126,10 +160,10 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* ── Content area ── */}
-        <div className="flex-1 min-w-0 pb-20 sm:pb-0">
-          {/* Upgrade banner — every page, free/trial users only */}
+        <div className="flex-1 min-w-0 pb-24 sm:pb-0">
+          {/* Upgrade banner — every page, free users only */}
           {!isPremium && !isTrial && (
-            <div className="mb-6 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-l-4 border-l-pm-accent">
+            <div className="mb-8 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-[3px] border-l-pm-accent">
               <div>
                 <p className="text-sm font-medium text-pm-text">You&apos;re on the free plan.</p>
                 <p className="text-xs text-pm-muted mt-0.5">
@@ -145,8 +179,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── Mobile bottom tab bar ── */}
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-sm border-t border-pm-border/60 z-40">
-        <div className="flex justify-around max-w-[960px] mx-auto">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-sm border-t border-pm-border/60 z-40 h-16">
+        <div className="flex justify-around items-center h-full max-w-[960px] mx-auto">
           {navItems.map(item => {
             const active = isActive(item.href)
             const Icon = item.icon
@@ -154,7 +188,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center gap-0.5 py-2.5 px-3"
+                className="flex flex-col items-center gap-1 px-4"
               >
                 <Icon className={active ? 'text-pm-accent' : 'text-pm-faint'} />
                 <span className={`text-[10px] ${active ? 'text-pm-text font-medium' : 'text-pm-faint'}`}>
