@@ -52,10 +52,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   {link.label}
                 </a>
               ))}
+              <span className="w-px h-4 bg-pm-border/60" />
+              <a
+                href="/claim"
+                className="text-[13px] font-medium text-pm-accent hover:text-pm-text transition-colors"
+              >
+                For Venues
+              </a>
             </nav>
             <MobileNav />
           </header>
-          {children}
+          <main className="min-h-[60vh]">
+            {children}
+          </main>
+          <footer className="border-t border-pm-border/40 mt-16 py-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-pm-faint">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <a href="/privacy" className="hover:text-pm-accent transition-colors">Privacy Policy</a>
+                <a href="/terms" className="hover:text-pm-accent transition-colors">Terms of Service</a>
+                <a href="mailto:hello@padelmanual.com" className="hover:text-pm-accent transition-colors">hello@padelmanual.com</a>
+              </div>
+              <p className="text-pm-faint/60">&copy; {new Date().getFullYear()} Padel Manual</p>
+            </div>
+          </footer>
         </div>
       </body>
     </html>

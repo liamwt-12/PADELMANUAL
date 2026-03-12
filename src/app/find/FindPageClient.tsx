@@ -213,7 +213,9 @@ export default function FindPageClient({ listings, cities }: Props) {
           {filtered.length > 0 && (
             <div className="p-4 border-t border-pm-border/30 bg-pm-bg">
               <p className="text-[11px] text-pm-faint text-center">
-                Own a venue? <a href="mailto:hello@padelmanual.com" className="text-pm-accent hover:underline">Claim your free listing</a>
+                Own a venue? <a href="/claim" className="text-pm-accent hover:underline">Claim your free listing</a>
+                {' · '}
+                Can&apos;t find your venue? <a href="/venues/add" className="text-pm-accent hover:underline">Add it →</a>
               </p>
             </div>
           )}
