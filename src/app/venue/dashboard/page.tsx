@@ -30,42 +30,27 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-/* ── Stat card ── */
+/* ── Section divider ── */
 
-function StatCard({
-  label,
-  value,
-  subtext,
-  hasUnread,
-}: {
+function Section({ label, children, className = '' }: {
   label: string
-  value: string | number
-  subtext?: string
-  hasUnread?: boolean
+  children: React.ReactNode
+  className?: string
 }) {
   return (
-    <div
-      className={`group relative rounded-2xl border bg-pm-bg-card p-8 transition-all duration-200 hover:border-pm-accent/30 ${
-        hasUnread ? 'border-t-2 border-t-pm-accent border-pm-border' : 'border-pm-border'
-      }`}
-    >
-      {/* Copper left accent on hover */}
-      <div className="absolute left-0 top-6 bottom-6 w-0.5 rounded-full bg-pm-accent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-      <p className="label-caps">{label}</p>
-      <p className="mt-3 font-serif text-5xl font-bold tracking-tight text-pm-text">
-        {typeof value === 'number' ? value.toLocaleString() : value}
-      </p>
-      {subtext && <p className="mt-2 text-xs text-pm-faint">{subtext}</p>}
-    </div>
+    <section className={`mt-8 sm:mt-12 ${className}`}>
+      <div className="border-t border-pm-border" />
+      <p className="label-caps mt-8 mb-6">{label}</p>
+      {children}
+    </section>
   )
 }
 
-/* ── Lead mini card (inline on overview) ── */
+/* ── Lead mini card ── */
 
 function LeadMiniCard({ lead }: { lead: Lead }) {
   return (
-    <div className="rounded-xl border border-pm-border/60 bg-white p-4 min-w-[160px]">
+    <div className="rounded-xl border border-pm-border/60 bg-white p-4 min-w-[150px]">
       <div className="flex items-center gap-2 mb-1.5">
         {!lead.contacted && (
           <span className="w-1.5 h-1.5 rounded-full bg-pm-accent shrink-0" />
@@ -87,8 +72,6 @@ function LeadMiniCard({ lead }: { lead: Lead }) {
 function GBPConnectCard() {
   return (
     <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
-      <p className="label-caps mb-4">Google Business Profile</p>
-
       <div className="sm:flex sm:items-start sm:justify-between sm:gap-8">
         <div className="flex-1 max-w-lg">
           <h3 className="font-serif text-xl tracking-tight text-pm-text">
@@ -120,79 +103,22 @@ function GBPConnectCard() {
         {/* Blurred placeholder metrics — FOMO */}
         <div className="mt-6 sm:mt-0 grid grid-cols-2 gap-x-8 gap-y-4 select-none" aria-hidden="true">
           <div className="text-center">
-            <p className="font-serif text-3xl font-bold tracking-tight text-pm-text blur-[6px]">1,847</p>
+            <p className="font-serif text-3xl tracking-tight text-pm-text blur-[6px]">1,847</p>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Searches</p>
           </div>
           <div className="text-center">
-            <p className="font-serif text-3xl font-bold tracking-tight text-pm-text blur-[6px]">312</p>
+            <p className="font-serif text-3xl tracking-tight text-pm-text blur-[6px]">312</p>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Directions</p>
           </div>
           <div className="text-center">
-            <p className="font-serif text-3xl font-bold tracking-tight text-pm-text blur-[6px]">89</p>
+            <p className="font-serif text-3xl tracking-tight text-pm-text blur-[6px]">89</p>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Calls</p>
           </div>
           <div className="text-center">
-            <p className="font-serif text-3xl font-bold tracking-tight text-pm-text blur-[6px]">541</p>
+            <p className="font-serif text-3xl tracking-tight text-pm-text blur-[6px]">541</p>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Website</p>
           </div>
         </div>
-      </div>
-    </div>
-  )
-}
-
-/* ── Recent leads section (full-width with inline mini cards) ── */
-
-function RecentLeadsSection({
-  leads,
-  totalCount,
-  unreadCount,
-}: {
-  leads: Lead[]
-  totalCount: number
-  unreadCount: number
-}) {
-  if (leads.length === 0) {
-    return (
-      <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
-        <p className="label-caps mb-4">Player Leads</p>
-        <div className="max-w-md">
-          <p className="text-sm text-pm-muted leading-relaxed">
-            Your first lead will appear here. Players are already finding your venue.
-          </p>
-          <p className="mt-2 text-xs text-pm-faint">
-            When someone enquires through your listing, you&apos;ll see their name, email, and what they&apos;re interested in.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`rounded-2xl border bg-pm-bg-card p-8 ${
-      unreadCount > 0 ? 'border-t-2 border-t-pm-accent border-pm-border' : 'border-pm-border'
-    }`}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <p className="label-caps">Player Leads</p>
-          {unreadCount > 0 && (
-            <span className="text-[10px] font-medium text-pm-accent bg-pm-accent/[0.08] rounded-full px-2.5 py-0.5">
-              {unreadCount} new
-            </span>
-          )}
-        </div>
-        <a
-          href="/venue/dashboard/leads"
-          className="text-xs text-pm-accent hover:underline font-medium"
-        >
-          View all {totalCount} →
-        </a>
-      </div>
-
-      <div className="flex gap-3 overflow-x-auto pb-1 -mb-1">
-        {leads.map(lead => (
-          <LeadMiniCard key={lead.id} lead={lead} />
-        ))}
       </div>
     </div>
   )
@@ -216,7 +142,6 @@ export default function DashboardOverview() {
     if (!listing) return
     const supabase = createClient()
 
-    // Fetch recent leads
     supabase
       .from('listing_leads')
       .select('*')
@@ -225,14 +150,12 @@ export default function DashboardOverview() {
       .limit(3)
       .then(({ data }) => setLeads((data as Lead[]) || []))
 
-    // Total count
     supabase
       .from('listing_leads')
       .select('*', { count: 'exact', head: true })
       .eq('listing_id', listing.id)
       .then(({ count }) => setLeadCount(count || 0))
 
-    // Unread count
     supabase
       .from('listing_leads')
       .select('*', { count: 'exact', head: true })
@@ -241,7 +164,6 @@ export default function DashboardOverview() {
       .then(({ count }) => setUnreadCount(count || 0))
   }, [listing])
 
-  // Refresh data after Stripe upgrade
   useEffect(() => {
     if (!justUpgraded) return
     refresh()
@@ -249,7 +171,6 @@ export default function DashboardOverview() {
     return () => clearTimeout(timer)
   }, [justUpgraded, refresh])
 
-  // Fetch GBP searches for the stat card
   useEffect(() => {
     if (!owner?.gbp_connected_at) return
     fetch('/api/gbp/insights')
@@ -263,8 +184,8 @@ export default function DashboardOverview() {
   return (
     <div>
       {/* ── Hero greeting ── */}
-      <div className="mb-10">
-        <h1 className="font-serif text-4xl tracking-tight text-pm-text">
+      <div className="mb-8 sm:mb-10">
+        <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-pm-text">
           {getGreeting()}, {owner?.name?.split(' ')[0] || 'there'}.
         </h1>
         <p className="mt-2 text-lg text-pm-muted">
@@ -282,7 +203,7 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* ── Upgrade success banner ── */}
+      {/* ── Banners ── */}
       {showUpgradeBanner && (
         <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex items-start justify-between gap-3">
           <div>
@@ -302,7 +223,6 @@ export default function DashboardOverview() {
         </div>
       )}
 
-      {/* ── GBP connected banner ── */}
       {showGBPBanner && (
         <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 flex items-start justify-between gap-3">
           <div>
@@ -322,109 +242,144 @@ export default function DashboardOverview() {
         </div>
       )}
 
-      {/* ── Stat cards: Views + Clicks side by side ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <StatCard
-          label="Listing Views"
-          value={listing?.view_count ?? 0}
-          subtext="All time"
-        />
-        <StatCard
-          label="Booking Clicks"
-          value={listing?.click_count ?? 0}
-          subtext="All time"
-        />
-      </div>
+      {/* ── LISTING PERFORMANCE ── */}
+      <Section label="Listing Performance">
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="font-serif text-6xl tracking-tight text-pm-text">
+              {(listing?.view_count ?? 0).toLocaleString()}
+            </p>
+            <p className="label-caps text-pm-faint mt-2">Listing Views</p>
+            <p className="text-xs text-pm-faint mt-1">All time</p>
+          </div>
+          <div>
+            <p className="font-serif text-6xl tracking-tight text-pm-text">
+              {(listing?.click_count ?? 0).toLocaleString()}
+            </p>
+            <p className="label-caps text-pm-faint mt-2">Booking Clicks</p>
+            <p className="text-xs text-pm-faint mt-1">All time</p>
+          </div>
+        </div>
+      </Section>
 
-      {/* ── Player Leads: full-width with inline lead previews ── */}
-      <div className="mb-6">
-        <StatCard
-          label="Player Leads"
-          value={leadCount}
-          subtext={unreadCount > 0 ? `${unreadCount} unread` : 'Total'}
-          hasUnread={unreadCount > 0}
-        />
-      </div>
-
-      {/* ── Recent leads inline ── */}
-      <div className="mb-6">
-        <RecentLeadsSection
-          leads={leads}
-          totalCount={leadCount}
-          unreadCount={unreadCount}
-        />
-      </div>
-
-      {/* ── Google Business Profile: full-width ── */}
-      <div className="mb-6">
-        {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
-      </div>
-
-      {/* ── Court Utilisation ── */}
-      {(isPremium || isTrial) && (
+      {/* ── PLAYER LEADS ── */}
+      <Section label="Player Leads">
+        {/* Big number */}
         <div className="mb-6">
+          <div className="flex items-baseline gap-3">
+            <p className="font-serif text-6xl tracking-tight text-pm-text">
+              {leadCount.toLocaleString()}
+            </p>
+            {unreadCount > 0 && (
+              <span className="w-2.5 h-2.5 rounded-full bg-pm-accent shrink-0" />
+            )}
+          </div>
+          <p className="text-sm text-pm-muted mt-2">
+            {unreadCount > 0
+              ? `${unreadCount} new enquir${unreadCount === 1 ? 'y' : 'ies'}`
+              : 'Total'
+            }
+          </p>
+        </div>
+
+        {/* Inline lead cards or empty state */}
+        {leads.length > 0 ? (
+          <div>
+            <div className="flex flex-wrap gap-3">
+              {leads.map(lead => (
+                <LeadMiniCard key={lead.id} lead={lead} />
+              ))}
+            </div>
+            <a
+              href="/venue/dashboard/leads"
+              className="inline-block mt-5 text-xs text-pm-accent hover:underline font-medium"
+            >
+              View all {leadCount} leads →
+            </a>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-pm-muted leading-relaxed">
+              Your first lead will appear here. Players are already finding your venue.
+            </p>
+            <p className="mt-2 text-xs text-pm-faint">
+              When someone enquires through your listing, you&apos;ll see their name, email, and what they&apos;re interested in.
+            </p>
+          </div>
+        )}
+      </Section>
+
+      {/* ── GOOGLE BUSINESS PROFILE ── */}
+      <Section label="Google Business Profile">
+        {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
+      </Section>
+
+      {/* ── COURT UTILISATION ── */}
+      {(isPremium || isTrial) && (
+        <Section label="Court Utilisation">
           {listing?.playtomic_tenant_id ? (
             <CourtUtilisationCard
               tenantId={listing.playtomic_tenant_id}
               totalCourts={listing.courts ?? listing.courts_count ?? 1}
             />
           ) : (
-            <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
-              <p className="label-caps mb-3">Court Utilisation</p>
-              <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
-                Court utilisation data isn&apos;t available for your venue yet. If you&apos;re on Playtomic,
-                add your venue URL in{' '}
-                <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>{' '}
-                and we&apos;ll connect it automatically.
-              </p>
-            </div>
+            <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
+              Court utilisation data isn&apos;t available for your venue yet. If you&apos;re on Playtomic,
+              add your venue URL in{' '}
+              <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>{' '}
+              and we&apos;ll connect it automatically.
+            </p>
           )}
-        </div>
+        </Section>
       )}
 
-      {/* ── Listing preview ── */}
+      {/* ── YOUR LISTING ── */}
       {listing && (
-        <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
-          <p className="label-caps mb-4">Your Listing</p>
-          <div className="sm:flex sm:items-start sm:justify-between sm:gap-6">
-            <div className="flex-1">
-              <h3 className="font-serif text-xl tracking-tight">{listing.name}</h3>
-              {listing.short_blurb && (
-                <p className="mt-1.5 text-sm text-pm-muted leading-relaxed">{listing.short_blurb}</p>
-              )}
-              {listing.address && !listing.short_blurb && (
-                <p className="mt-1.5 text-sm text-pm-muted">{listing.address}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-4 mt-4 sm:mt-0 shrink-0">
-              <a href={`/${listing.slug}`} className="btn-secondary text-xs">
-                View live listing →
-              </a>
-              <a
-                href="/venue/dashboard/listing"
-                className="text-xs text-pm-accent hover:underline font-medium"
-              >
-                Edit
-              </a>
+        <Section label="Your Listing">
+          <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
+            <div className="sm:flex sm:items-start sm:justify-between sm:gap-6">
+              <div className="flex-1">
+                <h3 className="font-serif text-xl tracking-tight">{listing.name}</h3>
+                {listing.short_blurb && (
+                  <p className="mt-1.5 text-sm text-pm-muted leading-relaxed">{listing.short_blurb}</p>
+                )}
+                {listing.address && !listing.short_blurb && (
+                  <p className="mt-1.5 text-sm text-pm-muted">{listing.address}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-4 mt-4 sm:mt-0 shrink-0">
+                <a href={`/${listing.slug}`} className="btn-secondary text-xs">
+                  View live listing →
+                </a>
+                <a
+                  href="/venue/dashboard/listing"
+                  className="text-xs text-pm-accent hover:underline font-medium"
+                >
+                  Edit
+                </a>
+              </div>
             </div>
           </div>
-        </div>
+        </Section>
       )}
 
       {/* ── Premium feature previews (free users only) ── */}
       {!isPremium && !isTrial && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {[
-            { label: 'Court Utilisation', desc: 'Live booking data from Playtomic' },
-            { label: 'Weekly Report', desc: 'Monday morning stats email' },
-            { label: 'Announcements', desc: 'Pin a message to your listing' },
-          ].map(f => (
-            <div key={f.label} className="rounded-2xl border border-pm-border/40 bg-pm-bg-card p-6 opacity-40">
-              <p className="label-caps">{f.label}</p>
-              <p className="mt-3 text-xs text-pm-muted">{f.desc}</p>
-              <p className="mt-3 text-[10px] text-pm-accent font-medium">Premium</p>
-            </div>
-          ))}
+        <div className="mt-8 sm:mt-12">
+          <div className="border-t border-pm-border" />
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Court Utilisation', desc: 'Live booking data from Playtomic' },
+              { label: 'Weekly Report', desc: 'Monday morning stats email' },
+              { label: 'Announcements', desc: 'Pin a message to your listing' },
+            ].map(f => (
+              <div key={f.label} className="opacity-40">
+                <p className="label-caps">{f.label}</p>
+                <p className="mt-2 text-xs text-pm-muted">{f.desc}</p>
+                <p className="mt-2 text-[10px] text-pm-accent font-medium">Premium</p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
