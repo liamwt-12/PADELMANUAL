@@ -21,6 +21,10 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    document.title = 'Leads — Padel Manual Dashboard'
+  }, [])
+
+  useEffect(() => {
     if (!listing) { setLoading(false); return }
     const supabase = createClient()
     supabase

@@ -55,11 +55,16 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
 
   // Filter to only allowed fields with non-undefined values
-  const updates: Record<string, string | null> = {}
+  const updates: Record<string, string | string[] | null> = {}
   for (const key of allowedFields) {
     if (key in body) {
       updates[key] = body[key] === '' ? null : body[key]
     }
+  }
+
+  // Handle images (array field, available to all users)
+  if (Array.isArray(body.images)) {
+    updates.images = body.images.filter((url: unknown) => typeof url === 'string' && url.trim())
   }
 
   if (Object.keys(updates).length === 0) {

@@ -60,6 +60,12 @@ export default function ListingPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [newPhotoUrl, setNewPhotoUrl] = useState('')
+  const [photos, setPhotos] = useState<string[]>([])
+
+  useEffect(() => {
+    document.title = 'Your Listing — Padel Manual Dashboard'
+  }, [])
 
   useEffect(() => {
     if (!listing) return
@@ -69,6 +75,7 @@ export default function ListingPage() {
       initial[f.key] = typeof val === 'string' ? val : ''
     }
     setForm(initial)
+    setPhotos(listing.images || [])
   }, [listing])
 
   async function handleSave() {
@@ -79,7 +86,7 @@ export default function ListingPage() {
     const res = await fetch('/api/listing/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, images: photos }),
     })
 
     if (!res.ok) {
@@ -94,7 +101,7 @@ export default function ListingPage() {
     setSaving(false)
   }
 
-  const hasPhotos = (listing?.images?.length ?? 0) > 0
+  const hasPhotos = photos.length > 0
   const score = getCompletionScore(form, hasPhotos)
   const missing = getMissingFields(form, hasPhotos)
 
@@ -208,18 +215,46 @@ export default function ListingPage() {
       </div>
 
       {/* Photos */}
-      {listing?.images && listing.images.length > 0 && (
-        <div className="mb-6">
-          <p className="label-caps text-pm-faint mb-3">Photos</p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {listing.images.map((url, i) => (
-              <div key={i} className="aspect-square rounded-lg overflow-hidden bg-pm-bg-hover">
+      <div className="mb-6">
+        <p className="label-caps text-pm-faint mb-3">Photos</p>
+        {photos.length > 0 && (
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
+            {photos.map((url, i) => (
+              <div key={i} className="relative group aspect-square rounded-lg overflow-hidden bg-pm-bg-hover">
                 <img src={url} alt="" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                  title="Remove photo"
+                >
+                  &times;
+                </button>
               </div>
             ))}
           </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={newPhotoUrl}
+            onChange={e => setNewPhotoUrl(e.target.value)}
+            placeholder="Paste a photo URL..."
+            className="flex-1 px-4 py-2.5 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent"
+          />
+          <button
+            onClick={() => {
+              if (newPhotoUrl.trim()) {
+                setPhotos([...photos, newPhotoUrl.trim()])
+                setNewPhotoUrl('')
+              }
+            }}
+            disabled={!newPhotoUrl.trim()}
+            className="shrink-0 rounded-xl border border-pm-border px-4 py-2.5 text-sm font-medium text-pm-muted hover:text-pm-text hover:border-pm-text/20 transition-all disabled:opacity-40"
+          >
+            Add
+          </button>
         </div>
-      )}
+      </div>
 
       {/* Premium upsell for free users */}
       {!hasPremium && (

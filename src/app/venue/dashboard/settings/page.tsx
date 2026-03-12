@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
@@ -10,7 +11,12 @@ export default function SettingsPage() {
   const { user, owner, listing, isPremium, isTrial } = useDashboard()
   const router = useRouter()
 
+  useEffect(() => {
+    document.title = 'Settings — Padel Manual Dashboard'
+  }, [])
+
   async function handleSignOut() {
+    if (!confirm('Sign out of your dashboard?')) return
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')

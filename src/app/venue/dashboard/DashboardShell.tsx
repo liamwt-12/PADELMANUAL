@@ -64,6 +64,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   async function handleSignOut() {
+    if (!confirm('Sign out of your dashboard?')) return
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
@@ -71,9 +72,36 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <main className="py-20 text-center">
-        <div className="w-6 h-6 border-2 border-pm-accent border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="mt-4 text-sm text-pm-muted">Loading your dashboard...</p>
+      <main className="py-8">
+        <div className="flex gap-10">
+          {/* Skeleton sidebar */}
+          <div className="hidden sm:block w-56 shrink-0 space-y-4">
+            <div className="h-3 w-24 bg-pm-ash/40 rounded animate-pulse" />
+            <div className="h-3 w-16 bg-pm-ash/30 rounded animate-pulse" />
+            <div className="mt-8 space-y-3">
+              <div className="h-4 w-28 bg-pm-ash/30 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-pm-ash/30 rounded animate-pulse" />
+              <div className="h-4 w-20 bg-pm-ash/30 rounded animate-pulse" />
+              <div className="h-4 w-22 bg-pm-ash/30 rounded animate-pulse" />
+            </div>
+          </div>
+          {/* Skeleton content */}
+          <div className="flex-1 min-w-0 space-y-6">
+            <div className="h-8 w-64 bg-pm-ash/40 rounded animate-pulse" />
+            <div className="h-4 w-40 bg-pm-ash/30 rounded animate-pulse" />
+            <div className="border-t border-pm-border mt-8" />
+            <div className="grid grid-cols-2 gap-6 mt-6">
+              <div className="space-y-2">
+                <div className="h-12 w-24 bg-pm-ash/30 rounded animate-pulse" />
+                <div className="h-3 w-20 bg-pm-ash/20 rounded animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-12 w-20 bg-pm-ash/30 rounded animate-pulse" />
+                <div className="h-3 w-24 bg-pm-ash/20 rounded animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
     )
   }

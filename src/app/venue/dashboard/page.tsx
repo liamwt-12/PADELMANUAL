@@ -187,7 +187,15 @@ export default function DashboardOverview() {
       .catch(() => {})
   }, [owner?.gbp_connected_at])
 
+  useEffect(() => {
+    document.title = listing?.name
+      ? `${listing.name} — Padel Manual Dashboard`
+      : 'Dashboard — Padel Manual'
+  }, [listing?.name])
+
   const planLabel = isPremium ? 'Premium' : isTrial ? 'Trial' : 'Free plan'
+  const claimedAt = owner?.created_at ? new Date(owner.created_at) : null
+  const isNewVenue = claimedAt ? (Date.now() - claimedAt.getTime()) < 30 * 24 * 60 * 60 * 1000 : false
 
   return (
     <div>
@@ -259,6 +267,11 @@ export default function DashboardOverview() {
             </p>
             <p className="label-caps text-pm-faint mt-2">Listing Views</p>
             <p className="text-xs text-pm-faint mt-1">All time</p>
+            {(listing?.view_count ?? 0) === 0 && isNewVenue && (
+              <p className="text-xs text-pm-muted mt-2 leading-relaxed max-w-[200px]">
+                Your listing went live recently. Views will build as players discover you.
+              </p>
+            )}
           </div>
           <div>
             <p className="font-serif text-6xl tracking-tight text-pm-text">
@@ -266,6 +279,12 @@ export default function DashboardOverview() {
             </p>
             <p className="label-caps text-pm-faint mt-2">Booking Clicks</p>
             <p className="text-xs text-pm-faint mt-1">All time</p>
+            {(listing?.click_count ?? 0) === 0 && isNewVenue && (
+              <p className="text-xs text-pm-muted mt-2 leading-relaxed max-w-[200px]">
+                Make sure your booking URL is set in{' '}
+                <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>.
+              </p>
+            )}
           </div>
         </div>
         {bestDay && (
@@ -313,11 +332,16 @@ export default function DashboardOverview() {
         ) : (
           <div>
             <p className="text-sm text-pm-muted leading-relaxed">
-              Your first lead will appear here. Players are already finding your venue.
+              No enquiries yet. Players can message you directly from your listing page.
             </p>
-            <p className="mt-2 text-xs text-pm-faint">
-              When someone enquires through your listing, you&apos;ll see their name, email, and what they&apos;re interested in.
-            </p>
+            {listing && (
+              <a
+                href={`/${listing.slug}`}
+                className="inline-block mt-3 text-xs text-pm-accent hover:underline font-medium"
+              >
+                View your listing →
+              </a>
+            )}
           </div>
         )}
       </Section>
