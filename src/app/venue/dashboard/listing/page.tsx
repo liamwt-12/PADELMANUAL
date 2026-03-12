@@ -10,23 +10,50 @@ type FieldDef = {
   type: 'text' | 'url' | 'tel' | 'email' | 'textarea'
   placeholder: string
   free: boolean
+  helper?: string
+  weight: number
 }
 
 const FIELDS: FieldDef[] = [
-  { key: 'website_url', label: 'Website', type: 'url', placeholder: 'https://yourvenue.com', free: true },
-  { key: 'booking_url', label: 'Booking URL', type: 'url', placeholder: 'https://playtomic.io/...', free: true },
-  { key: 'phone', label: 'Phone', type: 'tel', placeholder: '020 1234 5678', free: true },
-  { key: 'short_blurb', label: 'Short blurb', type: 'text', placeholder: 'One-line description shown on search results', free: false },
-  { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Full description of your venue, facilities, coaching...', free: false },
-  { key: 'instagram_url', label: 'Instagram', type: 'url', placeholder: 'https://instagram.com/yourvenue', free: false },
-  { key: 'email', label: 'Contact email', type: 'email', placeholder: 'hello@yourvenue.com', free: false },
-  { key: 'youtube_video_url', label: 'YouTube video', type: 'url', placeholder: 'https://youtube.com/watch?v=...', free: false },
-  { key: 'announcement', label: 'Announcement banner', type: 'text', placeholder: 'Pin a message to the top of your listing', free: false },
+  { key: 'website_url', label: 'Website', type: 'url', placeholder: 'https://yourvenue.com', free: true, weight: 10 },
+  { key: 'booking_url', label: 'Booking URL', type: 'url', placeholder: 'https://playtomic.io/...', free: true, weight: 15 },
+  { key: 'phone', label: 'Phone', type: 'tel', placeholder: '020 1234 5678', free: true, weight: 10 },
+  { key: 'short_blurb', label: 'Short blurb', type: 'text', placeholder: 'One-line description shown on search results', free: false, weight: 0 },
+  { key: 'description', label: 'Description', type: 'textarea', placeholder: 'Full description of your venue, facilities, coaching...', free: false, weight: 20 },
+  { key: 'instagram_url', label: 'Instagram', type: 'url', placeholder: 'https://instagram.com/yourvenue', free: false, weight: 10 },
+  { key: 'email', label: 'Contact email', type: 'email', placeholder: 'hello@yourvenue.com', free: false, weight: 0 },
+  { key: 'youtube_video_url', label: 'YouTube video', type: 'url', placeholder: 'https://youtube.com/watch?v=...', free: false, weight: 10, helper: 'Paste a YouTube video URL to embed it on your listing' },
+  { key: 'announcement', label: 'Announcement banner', type: 'text', placeholder: 'Pin a message to the top of your listing', free: false, weight: 10, helper: 'This appears as a banner on your listing page. Keep it brief.' },
 ]
+
+// Photos weight: 15 (checked separately via listing.images)
+
+function getCompletionScore(form: Record<string, string>, hasPhotos: boolean): number {
+  let score = 0
+  for (const f of FIELDS) {
+    if (f.weight > 0 && form[f.key]?.trim()) {
+      score += f.weight
+    }
+  }
+  if (hasPhotos) score += 15
+  return Math.min(score, 100)
+}
+
+function getMissingFields(form: Record<string, string>, hasPhotos: boolean): { label: string; key: string }[] {
+  const missing: { label: string; key: string }[] = []
+  for (const f of FIELDS) {
+    if (f.weight > 0 && !form[f.key]?.trim()) {
+      missing.push({ label: f.label, key: f.key })
+    }
+  }
+  if (!hasPhotos) {
+    missing.push({ label: 'Photos', key: 'photos' })
+  }
+  return missing
+}
 
 export default function ListingPage() {
   const { listing, isPremium, isTrial, refresh } = useDashboard()
-  const canEdit = true // all claimed users can edit (free fields gated per-field)
   const hasPremium = isPremium || isTrial
 
   const [form, setForm] = useState<Record<string, string>>({})
@@ -34,7 +61,6 @@ export default function ListingPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Populate form from listing data
   useEffect(() => {
     if (!listing) return
     const initial: Record<string, string> = {}
@@ -68,74 +94,101 @@ export default function ListingPage() {
     setSaving(false)
   }
 
-  const filledCount = FIELDS.filter(f => {
-    const val = form[f.key]
-    return val && val.trim().length > 0
-  }).length
-  const completionPct = Math.round((filledCount / FIELDS.length) * 100)
+  const hasPhotos = (listing?.images?.length ?? 0) > 0
+  const score = getCompletionScore(form, hasPhotos)
+  const missing = getMissingFields(form, hasPhotos)
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <p className="label-caps">Your Listing</p>
-        <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight">
+      <div className="mb-8">
+        <h1 className="font-serif text-3xl tracking-tight text-pm-text">
           {listing?.name || 'Your Venue'}
         </h1>
         {listing && (
-          <a href={`/${listing.slug}`} className="text-xs text-pm-accent hover:underline mt-1 inline-block">
-            View live listing →
+          <a
+            href={`/${listing.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-pm-accent hover:underline mt-2 inline-block"
+          >
+            Preview your listing →
           </a>
         )}
       </div>
 
-      {/* Completion bar */}
-      <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-5 mb-6">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-medium text-pm-text">Listing completeness</p>
-          <p className="text-sm font-serif font-bold text-pm-accent">{completionPct}%</p>
+      {/* Completion score */}
+      <div className="mb-10">
+        <div className="border-t border-pm-border" />
+        <div className="mt-8">
+          {score >= 100 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-pm-accent">&#10003;</span>
+              <p className="font-serif text-xl tracking-tight text-pm-text">Your listing is complete.</p>
+            </div>
+          ) : (
+            <p className="font-serif text-xl tracking-tight text-pm-text">
+              Your listing is {score}% complete
+            </p>
+          )}
+          <div className="mt-4 h-1 bg-pm-bg-hover rounded-full overflow-hidden">
+            <div
+              className="h-full bg-pm-accent rounded-full transition-all duration-500"
+              style={{ width: `${score}%` }}
+            />
+          </div>
+          {missing.length > 0 && (
+            <div className="mt-4 space-y-1.5">
+              {missing.map(m => (
+                <p key={m.key} className="text-xs text-pm-faint">
+                  <span className="text-pm-muted">{m.label}</span>
+                  {m.key !== 'photos' && (
+                    <button
+                      onClick={() => {
+                        const el = document.getElementById(`field-${m.key}`)
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        el?.focus()
+                      }}
+                      className="ml-1 text-pm-accent hover:underline"
+                    >
+                      Add →
+                    </button>
+                  )}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="h-1.5 bg-pm-bg-hover rounded-full overflow-hidden">
-          <div
-            className="h-full bg-pm-accent rounded-full transition-all duration-500"
-            style={{ width: `${completionPct}%` }}
-          />
-        </div>
-        <p className="mt-2 text-xs text-pm-faint">
-          {filledCount} of {FIELDS.length} fields completed
-        </p>
       </div>
 
       {/* Editor fields */}
-      <div className="rounded-2xl border border-pm-border bg-pm-bg-card divide-y divide-pm-border/40 mb-4">
+      <div className="space-y-6 mb-6">
         {FIELDS.map(field => {
           const locked = !field.free && !hasPremium
           return (
-            <div key={field.key} className="px-5 py-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm font-medium text-pm-text">{field.label}</label>
+            <div key={field.key} id={`field-${field.key}`}>
+              <div className="flex items-center justify-between mb-2">
+                <label className="label-caps text-pm-faint">{field.label}</label>
                 {locked && (
                   <span className="text-[10px] text-pm-accent font-medium">Premium</span>
                 )}
               </div>
 
               {locked ? (
-                <div className="relative">
-                  <input
-                    type="text"
-                    disabled
-                    value={form[field.key] || ''}
-                    placeholder={field.placeholder}
-                    className="w-full px-3 py-2.5 text-sm border border-pm-border/40 rounded-xl bg-pm-bg-hover text-pm-faint cursor-not-allowed"
-                  />
-                </div>
+                <input
+                  type="text"
+                  disabled
+                  value={form[field.key] || ''}
+                  placeholder={field.placeholder}
+                  className="w-full px-4 py-3 text-sm border border-pm-border/40 rounded-xl bg-pm-bg-hover text-pm-faint cursor-not-allowed"
+                />
               ) : field.type === 'textarea' ? (
                 <textarea
                   value={form[field.key] || ''}
                   onChange={e => setForm({ ...form, [field.key]: e.target.value })}
                   placeholder={field.placeholder}
                   rows={4}
-                  className="w-full px-3 py-2.5 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent resize-none"
+                  className="w-full px-4 py-3 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent resize-none"
                 />
               ) : (
                 <input
@@ -143,17 +196,34 @@ export default function ListingPage() {
                   value={form[field.key] || ''}
                   onChange={e => setForm({ ...form, [field.key]: e.target.value })}
                   placeholder={field.placeholder}
-                  className="w-full px-3 py-2.5 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent"
+                  className="w-full px-4 py-3 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent"
                 />
+              )}
+              {field.helper && !locked && (
+                <p className="mt-1.5 text-[11px] text-pm-faint">{field.helper}</p>
               )}
             </div>
           )
         })}
       </div>
 
+      {/* Photos */}
+      {listing?.images && listing.images.length > 0 && (
+        <div className="mb-6">
+          <p className="label-caps text-pm-faint mb-3">Photos</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {listing.images.map((url, i) => (
+              <div key={i} className="aspect-square rounded-lg overflow-hidden bg-pm-bg-hover">
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Premium upsell for free users */}
       {!hasPremium && (
-        <div className="rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-5 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-6 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-[3px] border-l-pm-accent">
           <div>
             <p className="text-sm font-medium text-pm-text">Unlock all fields</p>
             <p className="text-xs text-pm-muted mt-0.5">
@@ -165,11 +235,11 @@ export default function ListingPage() {
       )}
 
       {/* Save bar */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <button
           onClick={handleSave}
           disabled={saving}
-          className="btn-primary text-sm disabled:opacity-50"
+          className="rounded-full bg-pm-accent text-white px-8 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 w-full sm:w-auto"
         >
           {saving ? 'Saving...' : 'Save changes'}
         </button>

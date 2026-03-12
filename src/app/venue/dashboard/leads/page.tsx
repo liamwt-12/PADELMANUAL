@@ -48,18 +48,50 @@ export default function LeadsPage() {
 
   const canViewLeads = isPremium || isTrial
   const unreadCount = leads.filter(l => !l.contacted).length
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownloadCSV() {
+    setDownloading(true)
+    try {
+      const res = await fetch('/api/venue/leads-csv')
+      if (!res.ok) throw new Error()
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = res.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'leads.csv'
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      // silently fail — user can retry
+    }
+    setDownloading(false)
+  }
 
   return (
     <div>
       {/* ── Header ── */}
       <div className="mb-10">
-        <h1 className="font-serif text-3xl tracking-tight text-pm-text">Player Leads</h1>
-        <p className="mt-2 text-sm text-pm-muted">
-          {leads.length > 0
-            ? `${unreadCount} unread of ${leads.length} total`
-            : 'Enquiries from your listing appear here'
-          }
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl tracking-tight text-pm-text">Player Leads</h1>
+            <p className="mt-2 text-sm text-pm-muted">
+              {leads.length > 0
+                ? `${unreadCount} unread of ${leads.length} total`
+                : 'Enquiries from your listing appear here'
+              }
+            </p>
+          </div>
+          {canViewLeads && leads.length > 0 && (
+            <button
+              onClick={handleDownloadCSV}
+              disabled={downloading}
+              className="shrink-0 rounded-full border border-pm-border px-4 py-2 text-xs font-medium text-pm-muted hover:text-pm-text hover:border-pm-text/20 transition-all disabled:opacity-50"
+            >
+              {downloading ? 'Downloading...' : '↓ Download CSV'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Upgrade wall ── */}

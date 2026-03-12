@@ -137,6 +137,14 @@ export default function DashboardOverview() {
   const [leadCount, setLeadCount] = useState(0)
   const [unreadCount, setUnreadCount] = useState(0)
   const [gbpSearches, setGbpSearches] = useState<number | null>(null)
+  const [bestDay, setBestDay] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/venue/insights')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.bestDay) setBestDay(data.bestDay) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!listing) return
@@ -260,6 +268,11 @@ export default function DashboardOverview() {
             <p className="text-xs text-pm-faint mt-1">All time</p>
           </div>
         </div>
+        {bestDay && (
+          <p className="mt-6 text-sm text-pm-muted italic">
+            Your listing gets the most enquiries on {bestDay}.
+          </p>
+        )}
       </Section>
 
       {/* ── PLAYER LEADS ── */}
