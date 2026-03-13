@@ -534,6 +534,16 @@ export default function DashboardOverview() {
         )}
       </Section>
 
+      {/* ── WhatsApp tip ── */}
+      {listing && !listing.whatsapp_number && (
+        <p className="mt-4 text-xs text-pm-faint">
+          Add your WhatsApp number to let players message you directly.{' '}
+          <a href="/venue/dashboard/listing" className="text-[#c4956a] hover:underline">
+            Update in Your Listing →
+          </a>
+        </p>
+      )}
+
       {/* ── LOCAL COMPETITION ── */}
       {competitors && (
         <Section label="Local Competition">

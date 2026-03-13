@@ -134,6 +134,9 @@ export default async function ListingPage({ params }: Props) {
           {playtomicUrl && <LinkPill label="Book on Playtomic" href={playtomicUrl} primary />}
           {listing.booking_url && !playtomicUrl && <LinkPill label="Book" href={listing.booking_url} primary />}
           {listing.website_url && <LinkPill label="Website" href={listing.website_url} />}
+          {listing.whatsapp_number && (
+            <LinkPill label="Message on WhatsApp" href={`https://wa.me/${listing.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent('Hi, I found your venue on Padel Manual and wanted to get in touch.')}`} />
+          )}
           {listing.instagram_url && <LinkPill label="Instagram" href={listing.instagram_url} />}
           {lat && lng && (
             <LinkPill label="Directions" href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`} />

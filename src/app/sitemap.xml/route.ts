@@ -36,8 +36,9 @@ export async function GET() {
     { url: '/guides/padel-cost-uk', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-rules', priority: '0.8', freq: 'monthly' },
     { url: '/guides/what-to-wear', priority: '0.7', freq: 'monthly' },
-    // News
+    // News & pricing
     { url: '/padel-news/openings-closures', priority: '0.8', freq: 'weekly' },
+    { url: '/padel-costs', priority: '0.8', freq: 'weekly' },
     // Gear guides (editorial)
     { url: '/gear/best-padel-rackets-uk', priority: '0.8', freq: 'monthly' },
     { url: '/gear/best-padel-shoes-uk', priority: '0.7', freq: 'monthly' },

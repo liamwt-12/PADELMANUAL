@@ -25,6 +25,54 @@ export async function GET(request: NextRequest) {
     { auth: { persistSession: false } }
   )
 
+  // ── Helper: scrape contact email from a website ──
+  async function scrapeContactEmail(websiteUrl: string): Promise<string | null> {
+    const EMAIL_PATTERN = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g
+    const PRIORITY_PREFIXES = ['contact', 'info', 'hello', 'bookings', 'enquiries', 'reception']
+
+    async function extractFromPage(url: string): Promise<string | null> {
+      try {
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'PadelManual/1.0 (venue directory)' },
+          signal: AbortSignal.timeout(8000),
+        })
+        if (!res.ok) return null
+        const html = await res.text()
+
+        // Look for mailto: links first (most reliable)
+        const mailtoMatch = html.match(/mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
+        if (mailtoMatch) return mailtoMatch[1].toLowerCase()
+
+        // Fall back to regex across page
+        const allEmails = [...new Set((html.match(EMAIL_PATTERN) || []).map(e => e.toLowerCase()))]
+          .filter(e => !e.endsWith('.png') && !e.endsWith('.jpg') && !e.endsWith('.svg') && !e.includes('example.com') && !e.includes('sentry'))
+
+        // Prefer common contact prefixes
+        const priorityEmail = allEmails.find(e =>
+          PRIORITY_PREFIXES.some(p => e.startsWith(p + '@'))
+        )
+        if (priorityEmail) return priorityEmail
+
+        return allEmails[0] || null
+      } catch {
+        return null
+      }
+    }
+
+    // Try homepage first
+    const fromHomepage = await extractFromPage(websiteUrl)
+    if (fromHomepage) return fromHomepage
+
+    // Try /contact page
+    try {
+      const base = new URL(websiteUrl)
+      const contactUrl = `${base.origin}/contact`
+      return await extractFromPage(contactUrl)
+    } catch {
+      return null
+    }
+  }
+
   // Find unclaimed venues with leads in the last 30 days
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -43,7 +91,7 @@ export async function GET(request: NextRequest) {
   // Get unclaimed venues from those listings
   const { data: venues } = await supabase
     .from('listings')
-    .select('id, name, slug, email, contact_email, view_count')
+    .select('id, name, slug, email, contact_email, view_count, website_url, google_place_id')
     .in('id', listingIds)
     .neq('claimed', true)
     .neq('permanently_closed', true)
@@ -68,14 +116,51 @@ export async function GET(request: NextRequest) {
   const maxPerWeek = 10
 
   for (const venue of eligible.slice(0, maxPerWeek)) {
-    const email = venue.contact_email || venue.email
+    let email = venue.contact_email || venue.email
+
+    // Auto-scrape contact email if none found
+    if (!email && venue.website_url) {
+      email = await scrapeContactEmail(venue.website_url)
+      if (email) {
+        // Store found email for future use
+        await supabase
+          .from('listings')
+          .update({ email })
+          .eq('id', venue.id)
+      }
+    }
+
+    // Fallback: try Google Places for website, then scrape that
+    if (!email && venue.google_place_id) {
+      try {
+        const placesKey = process.env.GOOGLE_PLACES_API_KEY
+        if (placesKey) {
+          const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${venue.google_place_id}&fields=website&key=${placesKey}`
+          const detailsRes = await fetch(detailsUrl)
+          const detailsData = await detailsRes.json()
+          const website = detailsData.result?.website
+          if (website) {
+            email = await scrapeContactEmail(website)
+            if (email) {
+              await supabase
+                .from('listings')
+                .update({ email, website_url: website })
+                .eq('id', venue.id)
+            }
+          }
+        }
+      } catch {
+        // Silently continue
+      }
+    }
+
     if (!email) {
       await supabase.from('outreach_log').insert({
         listing_id: venue.id,
         email: null,
         type: 'outreach',
         status: 'no_contact',
-        notes: 'No contact email found',
+        notes: 'No contact email found (auto-scrape attempted)',
       })
       skipped++
       continue
