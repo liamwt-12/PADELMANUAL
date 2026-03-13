@@ -35,6 +35,24 @@ export type Listing = {
   permanently_closed?: boolean;
   closed_at?: string | null;
 
+  // Google Reviews
+  google_place_id?: string | null;
+  google_rating?: number | null;
+  google_review_count?: number | null;
+  google_data_updated_at?: string | null;
+
+  // Playtomic public data
+  playtomic_rating?: number | null;
+  playtomic_review_count?: number | null;
+  playtomic_data_updated_at?: string | null;
+
+  // WhatsApp
+  whatsapp_number?: string | null;
+
+  // Pricing
+  price_per_hour_peak?: number | null;
+  price_per_hour_offpeak?: number | null;
+
   // Old schema fields (still used by London pages)
   type?: ListingType;
   area?: string | null;

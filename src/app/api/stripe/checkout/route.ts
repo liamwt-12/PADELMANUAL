@@ -12,6 +12,19 @@ export async function POST(request: NextRequest) {
   })
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://padelmanual.com'
 
+  // Read plan selection from form data
+  const formData = await request.formData()
+  const plan = (formData.get('plan') as string) || 'monthly'
+
+  const priceId =
+    plan === 'annual'
+      ? process.env.STRIPE_PREMIUM_ANNUAL_PRICE_ID
+      : process.env.STRIPE_PREMIUM_PRICE_ID
+
+  if (!priceId) {
+    return NextResponse.json({ error: 'Price not configured' }, { status: 500 })
+  }
+
   // Get auth user + Supabase admin client in parallel
   const cookieStore = await cookies()
   const authClient = createServerClient(
@@ -69,26 +82,18 @@ export async function POST(request: NextRequest) {
       .then(() => {})
   }
 
-  // Create checkout session — £29/mo recurring
+  const submitMessage =
+    plan === 'annual'
+      ? 'Padel Manual Business — annual plan, £249/year. Cancel anytime.'
+      : 'Padel Manual Business — monthly plan, £29/month. Cancel anytime.'
+
+  // Create checkout session
   const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     customer: customerId,
-    line_items: [
-      {
-        price_data: {
-          currency: 'gbp',
-          recurring: { interval: 'month' },
-          product_data: {
-            name: 'Padel Manual Premium',
-            description: 'Analytics, leads, Google insights, and listing management.',
-          },
-          unit_amount: 2900,
-        },
-        quantity: 1,
-      },
-    ],
+    line_items: [{ price: priceId, quantity: 1 }],
     custom_text: {
-      submit: { message: 'Padel Manual Business — premium venue dashboard. Cancel anytime.' },
+      submit: { message: submitMessage },
     },
     success_url: `${siteUrl}/venue/dashboard?upgraded=true`,
     cancel_url: `${siteUrl}/venue/dashboard/settings`,
@@ -96,6 +101,7 @@ export async function POST(request: NextRequest) {
       venue_owner_id: owner.id,
       venue_owner_email: user.email,
       listing_id: owner.listing_id || '',
+      plan,
     },
   })
 

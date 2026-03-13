@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { VenueOwnerProvider, useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
-import UpgradeButton from '@/components/UpgradeButton'
 
 /* ── Icons (Heroicons outline, 18×18) ── */
 
@@ -196,9 +195,15 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-pm-text">Get more from your listing.</p>
                 <p className="text-xs text-pm-muted mt-0.5">
                   Unlock analytics, player leads, Google insights, and weekly reports.
+                  From &pound;20.75/month on the annual plan.
                 </p>
               </div>
-              <UpgradeButton className="whitespace-nowrap self-start sm:self-center" />
+              <a
+                href="/venue/dashboard/settings"
+                className="rounded-full bg-[#c4956a] text-white px-6 py-3 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90 whitespace-nowrap self-start sm:self-center text-center"
+              >
+                See plans &rarr;
+              </a>
             </div>
           )}
 

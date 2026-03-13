@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
-import UpgradeButton from '@/components/UpgradeButton'
+import PricingSection from '@/components/PricingSection'
 import ManageBillingButton from '@/components/ManageBillingButton'
 
 export default function SettingsPage() {
@@ -28,7 +28,6 @@ export default function SettingsPage() {
     router.refresh()
   }
 
-  const planLabel = isPremium ? 'Premium' : isTrial ? 'Trial' : 'Free'
   const trialEnd = owner?.trial_ends_at
     ? new Date(owner.trial_ends_at).toLocaleDateString('en-GB', {
         day: 'numeric', month: 'long', year: 'numeric',
@@ -62,22 +61,24 @@ export default function SettingsPage() {
       {/* Plan */}
       <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-5 mb-6">
         <p className="label-caps mb-2">Your Plan</p>
-        <div className="flex items-center justify-between">
+        {isPremium ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-serif font-bold tracking-tight">Premium</p>
+              <p className="text-xs text-pm-faint mt-0.5">Full analytics, leads, Google insights</p>
+            </div>
+            {owner?.stripe_customer_id && <ManageBillingButton />}
+          </div>
+        ) : isTrial ? (
           <div>
-            <p className="text-lg font-serif font-bold tracking-tight">{planLabel}</p>
-            {isTrial && trialEnd && (
+            <p className="text-lg font-serif font-bold tracking-tight">Trial</p>
+            {trialEnd && (
               <p className="text-xs text-pm-faint mt-0.5">Trial ends {trialEnd}</p>
             )}
-            {!isPremium && !isTrial && (
-              <p className="text-xs text-pm-faint mt-0.5">Basic listing management</p>
-            )}
-            {isPremium && (
-              <p className="text-xs text-pm-faint mt-0.5">Full analytics, leads, Google insights</p>
-            )}
           </div>
-          {!isPremium && !isTrial && <UpgradeButton />}
-          {isPremium && owner?.stripe_customer_id && <ManageBillingButton />}
-        </div>
+        ) : (
+          <PricingSection />
+        )}
       </div>
 
       {/* Google Business Profile */}

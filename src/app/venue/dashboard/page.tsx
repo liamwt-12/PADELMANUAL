@@ -17,6 +17,46 @@ type Lead = {
   created_at: string
 }
 
+type GoogleReviewData = {
+  rating: number | null
+  reviewCount: number | null
+  placeId: string | null
+  mapsUrl?: string | null
+  notFound?: boolean
+}
+
+type PlaytomicData = {
+  rating: number | null
+  reviewCount: number | null
+  tenantId?: string | null
+  noTenant?: boolean
+}
+
+type WeatherDay = {
+  date: string
+  dayName: string
+  temp: number
+  emoji: string
+}
+
+type WeatherData = {
+  days: WeatherDay[] | null
+  advice: string | null
+  city: string | null
+}
+
+type CompetitorVenue = {
+  name: string
+  slug: string
+  distance: number
+}
+
+type CompetitorData = {
+  count: number
+  nearby: CompetitorVenue[]
+  insight: string | null
+}
+
 /* ── Helpers ── */
 
 function getGreeting(): string {
@@ -138,6 +178,11 @@ export default function DashboardOverview() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [gbpSearches, setGbpSearches] = useState<number | null>(null)
   const [bestDay, setBestDay] = useState<string | null>(null)
+  const [googleReview, setGoogleReview] = useState<GoogleReviewData | null>(null)
+  const [playtomicData, setPlaytomicData] = useState<PlaytomicData | null>(null)
+  const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [competitors, setCompetitors] = useState<CompetitorData | null>(null)
+  const [showAllCompetitors, setShowAllCompetitors] = useState(false)
 
   useEffect(() => {
     fetch('/api/venue/insights')
@@ -186,6 +231,31 @@ export default function DashboardOverview() {
       .then(data => { if (data?.searches != null) setGbpSearches(data.searches) })
       .catch(() => {})
   }, [owner?.gbp_connected_at])
+
+  // Fetch Google Reviews, Playtomic, Weather, Competitors
+  useEffect(() => {
+    if (!listing) return
+
+    fetch('/api/venue/google-reviews')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setGoogleReview(data) })
+      .catch(() => {})
+
+    fetch('/api/venue/playtomic-public')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data && !data.noTenant) setPlaytomicData(data) })
+      .catch(() => {})
+
+    fetch('/api/venue/weather')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.days) setWeather(data) })
+      .catch(() => {})
+
+    fetch('/api/venue/competitors')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setCompetitors(data) })
+      .catch(() => {})
+  }, [listing])
 
   useEffect(() => {
     document.title = listing?.name
@@ -294,6 +364,124 @@ export default function DashboardOverview() {
         )}
       </Section>
 
+      {/* ── GOOGLE REPUTATION ── */}
+      {googleReview && !googleReview.notFound && googleReview.rating != null && (
+        <Section label="Google Reputation">
+          <div className="flex flex-wrap gap-x-16 gap-y-8">
+            <div>
+              <p className="font-serif text-5xl tracking-tight text-pm-text">
+                <span className="text-[#c4956a]">★</span> {googleReview.rating}
+              </p>
+              <p className="text-sm text-pm-muted mt-2">
+                Based on {googleReview.reviewCount?.toLocaleString()} reviews
+              </p>
+              {googleReview.mapsUrl && (
+                <a
+                  href={googleReview.mapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
+                >
+                  View on Google →
+                </a>
+              )}
+            </div>
+
+            {/* Playtomic alongside Google if available */}
+            {playtomicData && playtomicData.rating != null && (
+              <div>
+                <p className="font-serif text-5xl tracking-tight text-pm-text">
+                  <span className="text-[#c4956a]">★</span> {playtomicData.rating}
+                </p>
+                <p className="text-sm text-pm-muted mt-2">
+                  Based on {playtomicData.reviewCount?.toLocaleString()} bookings
+                </p>
+                <a
+                  href={`https://playtomic.io/tenant/${playtomicData.tenantId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
+                >
+                  View on Playtomic →
+                </a>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-4">
+                  Playtomic Reputation
+                </p>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* Playtomic standalone (no Google data) */}
+      {playtomicData && playtomicData.rating != null && (!googleReview || googleReview.notFound || googleReview.rating == null) && (
+        <Section label="Playtomic Reputation">
+          <div>
+            <p className="font-serif text-5xl tracking-tight text-pm-text">
+              <span className="text-[#c4956a]">★</span> {playtomicData.rating}
+            </p>
+            <p className="text-sm text-pm-muted mt-2">
+              Based on {playtomicData.reviewCount?.toLocaleString()} bookings
+            </p>
+            <a
+              href={`https://playtomic.io/tenant/${playtomicData.tenantId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
+            >
+              View on Playtomic →
+            </a>
+          </div>
+        </Section>
+      )}
+
+      {/* Google Reputation — not found state */}
+      {googleReview && googleReview.notFound && (
+        <Section label="Google Reputation">
+          <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
+            No Google listing found. Add your venue to Google Maps to appear in local searches.{' '}
+            <a
+              href="https://business.google.com/create"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#c4956a] hover:underline"
+            >
+              Create your listing →
+            </a>
+          </p>
+        </Section>
+      )}
+
+      {/* Google Reputation — loading state */}
+      {googleReview === null && listing && (
+        <Section label="Google Reputation">
+          <p className="text-sm text-pm-muted">
+            We&apos;re finding your Google listing. Check back shortly.
+          </p>
+        </Section>
+      )}
+
+      {/* ── WEEKEND WEATHER ── */}
+      {weather && weather.days && (
+        <section className="mt-6 sm:mt-8">
+          <p className="text-xs font-medium text-pm-muted uppercase tracking-wider mb-3">
+            This weekend in {weather.city || 'your area'}
+          </p>
+          <div className="flex items-center gap-6 text-sm text-pm-text">
+            {weather.days.map(day => (
+              <span key={day.date} className="flex items-center gap-1.5">
+                <span className="text-pm-muted">{day.dayName}</span>
+                <span>{day.emoji}</span>
+                <span>{day.temp}°C</span>
+              </span>
+            ))}
+          </div>
+          {weather.advice && (
+            <p className="text-xs text-pm-faint mt-2 italic">{weather.advice}</p>
+          )}
+        </section>
+      )}
+
       {/* ── PLAYER LEADS ── */}
       <Section label="Player Leads">
         {/* Big number */}
@@ -345,6 +533,53 @@ export default function DashboardOverview() {
           </div>
         )}
       </Section>
+
+      {/* ── LOCAL COMPETITION ── */}
+      {competitors && (
+        <Section label="Local Competition">
+          {competitors.count === 0 ? (
+            <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
+              {competitors.insight}
+            </p>
+          ) : (
+            <div>
+              <p className="text-sm text-pm-muted mb-4">
+                {competitors.count} other venue{competitors.count !== 1 ? 's' : ''} within 5 miles
+              </p>
+              {competitors.insight && (
+                <p className="text-sm text-pm-muted italic mb-4">{competitors.insight}</p>
+              )}
+              <div className="space-y-2">
+                {(showAllCompetitors ? competitors.nearby : competitors.nearby.slice(0, 3)).map(v => (
+                  <a
+                    key={v.slug}
+                    href={`/${v.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between py-1.5 group"
+                  >
+                    <span className="text-sm text-pm-text group-hover:text-[#c4956a] transition-colors">
+                      {v.name}
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-pm-faint shrink-0 ml-4">
+                      {v.distance}mi
+                      <span className="text-[#c4956a]">→</span>
+                    </span>
+                  </a>
+                ))}
+              </div>
+              {competitors.nearby.length > 3 && !showAllCompetitors && (
+                <button
+                  onClick={() => setShowAllCompetitors(true)}
+                  className="mt-3 text-xs text-pm-faint hover:text-pm-text transition-colors"
+                >
+                  + {competitors.nearby.length - 3} more
+                </button>
+              )}
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* ── GOOGLE BUSINESS PROFILE ── */}
       <Section label="Google Business Profile">
