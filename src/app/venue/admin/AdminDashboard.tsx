@@ -39,6 +39,18 @@ type Submission = {
   created_at: string
 }
 
+type Report = {
+  id: string
+  listing_id: string | null
+  report_type: string
+  reporter_email: string | null
+  notes: string | null
+  status: string
+  created_at: string
+  listing_name: string | null
+  listing_slug: string | null
+}
+
 function StatusDot({ status }: { status: string }) {
   const color = status === 'premium' ? 'bg-pm-accent'
     : status === 'trial' ? 'bg-amber-400'
@@ -54,10 +66,12 @@ export default function AdminDashboard({
   owners,
   outreachLog,
   submissions,
+  reports,
 }: {
   owners: Owner[]
   outreachLog: OutreachEntry[]
   submissions: Submission[]
+  reports: Report[]
 }) {
   const [triggeringFeatured, setTriggeringFeatured] = useState(false)
   const [triggeringOutreach, setTriggeringOutreach] = useState(false)
@@ -165,6 +179,80 @@ export default function AdminDashboard({
                     )}
                     {s.status !== 'pending' && (
                       <p className="mt-1 text-[10px] text-emerald-600 font-medium capitalize">{s.status}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Listing Reports */}
+      <section className="mb-10">
+        <h2 className="font-serif text-xl tracking-tight text-pm-text mb-4">
+          Reports ({reports.length})
+        </h2>
+        {reports.length === 0 ? (
+          <p className="text-sm text-pm-faint">No reports.</p>
+        ) : (
+          <div className="rounded-2xl border border-pm-border bg-pm-bg-card divide-y divide-pm-border/40">
+            {reports.map(r => (
+              <div key={r.id} className="px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <StatusDot status={r.report_type === 'permanently_closed' ? 'failed' : 'pending'} />
+                      <p className="text-sm font-medium text-pm-text">
+                        {r.listing_name || 'Unknown venue'}
+                      </p>
+                      <span className="text-[10px] text-pm-faint bg-pm-bg-hover rounded-full px-2 py-0.5">
+                        {r.report_type.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    {r.notes && (
+                      <p className="text-xs text-pm-muted mt-1">{r.notes}</p>
+                    )}
+                    {r.reporter_email && (
+                      <p className="text-[10px] text-pm-faint mt-0.5">{r.reporter_email}</p>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[10px] text-pm-faint">
+                      {new Date(r.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short',
+                      })}
+                    </p>
+                    {r.status === 'pending' && (
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          onClick={async () => {
+                            if (!r.listing_id) return
+                            await fetch('/api/listing/report', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                listing_id: r.listing_id,
+                                report_type: 'admin_close',
+                              }),
+                            })
+                            window.location.reload()
+                          }}
+                          className="text-[10px] font-medium text-red-500 hover:underline"
+                        >
+                          Mark closed
+                        </button>
+                        {r.listing_slug && (
+                          <a
+                            href={`/${r.listing_slug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-medium text-pm-accent hover:underline"
+                          >
+                            View
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

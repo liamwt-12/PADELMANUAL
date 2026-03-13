@@ -46,6 +46,24 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
     .limit(30)
 
+  // Fetch listing reports
+  const { data: reports } = await supabase
+    .from('listing_reports')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  // Get listing names for reports
+  const reportListingIds = (reports || []).map(r => r.listing_id).filter(Boolean)
+  const { data: reportListings } = reportListingIds.length > 0
+    ? await supabase.from('listings').select('id, name, slug').in('id', reportListingIds)
+    : { data: [] }
+
+  const reportListingMap: Record<string, { name: string; slug: string }> = {}
+  for (const l of reportListings || []) {
+    reportListingMap[l.id] = { name: l.name, slug: l.slug }
+  }
+
   // Fetch pending venue submissions
   const { data: submissions } = await supabase
     .from('venue_submissions')
@@ -61,6 +79,11 @@ export default async function AdminPage() {
         }))}
         outreachLog={outreachLog || []}
         submissions={submissions || []}
+        reports={(reports || []).map(r => ({
+          ...r,
+          listing_name: r.listing_id ? reportListingMap[r.listing_id]?.name || null : null,
+          listing_slug: r.listing_id ? reportListingMap[r.listing_id]?.slug || null : null,
+        }))}
       />
     </main>
   )

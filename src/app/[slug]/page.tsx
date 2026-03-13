@@ -8,6 +8,7 @@ import ClaimForm from "@/components/ClaimForm";
 import GooglePlacesData from "@/components/GooglePlacesData";
 import ListingSchema from "@/components/ListingSchema";
 import LeadCaptureForm from "@/components/LeadCaptureForm";
+import ReportListingModal from "@/components/ReportListingModal";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -252,6 +253,11 @@ export default async function ListingPage({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* ── Report issue ── */}
+      <section className="mt-12 pt-6 border-t border-pm-border/30 text-center">
+        <ReportListingModal listingId={listing.id} venueName={listing.name} />
+      </section>
 
     </main>
   );
