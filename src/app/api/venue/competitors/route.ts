@@ -92,14 +92,14 @@ export async function GET() {
     })
   }
 
-  // Calculate exact distances and filter to 5 miles
+  // Calculate exact distances and filter to 5 miles (exclude anything at 0mi — likely self/duplicate)
   const withDistance = candidates
     .map(v => ({
       name: v.name,
       slug: v.slug,
       distance: haversineDistance(listing.lat!, listing.lng!, v.lat!, v.lng!),
     }))
-    .filter(v => v.distance <= RADIUS_MILES)
+    .filter(v => v.distance > 0.01 && v.distance <= RADIUS_MILES)
     .sort((a, b) => a.distance - b.distance)
 
   const count = withDistance.length

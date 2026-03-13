@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const FREE_FIELDS = ['website_url', 'booking_url', 'phone', 'whatsapp_number']
+const FREE_FIELDS = ['website_url', 'booking_url', 'phone', 'whatsapp_number', 'google_place_id']
 const PREMIUM_FIELDS = [
   ...FREE_FIELDS,
   'description', 'short_blurb', 'instagram_url', 'email',

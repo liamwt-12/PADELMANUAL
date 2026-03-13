@@ -25,6 +25,7 @@ const FIELDS: FieldDef[] = [
   { key: 'youtube_video_url', label: 'YouTube video', type: 'url', placeholder: 'https://youtube.com/watch?v=...', free: false, weight: 10, helper: 'Paste a YouTube video URL to embed it on your listing' },
   { key: 'announcement', label: 'Announcement banner', type: 'text', placeholder: 'Pin a message to the top of your listing', free: false, weight: 10, helper: 'This appears as a banner on your listing page. Keep it brief.' },
   { key: 'whatsapp_number', label: 'WhatsApp Business number', type: 'tel', placeholder: '447911123456', free: true, weight: 0, helper: 'Include country code, e.g. 447911123456. Players can message you directly from your listing.' },
+  { key: 'google_place_id', label: 'Google Place ID', type: 'text', placeholder: 'ChIJ...', free: true, weight: 0, helper: 'Paste your Google Place ID to show your Google rating on the dashboard. Find it at developers.google.com/maps/documentation/places/web-service/place-id-finder' },
 ]
 
 // Photos weight: 15 (checked separately via listing.images)

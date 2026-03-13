@@ -328,7 +328,7 @@ export default function DashboardOverview() {
         </div>
       )}
 
-      {/* ── LISTING PERFORMANCE ── */}
+      {/* ── 2. LISTING PERFORMANCE ── */}
       <Section label="Listing Performance">
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -350,10 +350,9 @@ export default function DashboardOverview() {
             <p className="label-caps text-pm-faint mt-2">Booking Clicks</p>
             <p className="text-xs text-pm-faint mt-1">All time</p>
             {(listing?.click_count ?? 0) === 0 && isNewVenue && (
-              <p className="text-xs text-pm-muted mt-2 leading-relaxed max-w-[200px]">
-                Make sure your booking URL is set in{' '}
-                <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>.
-              </p>
+              <a href="/venue/dashboard/listing" className="inline-block mt-2 text-[11px] text-[#c4956a] hover:underline">
+                Set your booking URL →
+              </a>
             )}
           </div>
         </div>
@@ -364,7 +363,69 @@ export default function DashboardOverview() {
         )}
       </Section>
 
-      {/* ── GOOGLE REPUTATION ── */}
+      {/* ── 3. PLAYER LEADS ── */}
+      <Section label="Player Leads">
+        {/* Big number */}
+        <div className="mb-6">
+          <div className="flex items-baseline gap-3">
+            <p className="font-serif text-6xl tracking-tight text-pm-text">
+              {leadCount.toLocaleString()}
+            </p>
+            {unreadCount > 0 && (
+              <span className="w-2.5 h-2.5 rounded-full bg-pm-accent shrink-0" />
+            )}
+          </div>
+          <p className="text-sm text-pm-muted mt-2">
+            {unreadCount > 0
+              ? `${unreadCount} new enquir${unreadCount === 1 ? 'y' : 'ies'}`
+              : 'Total'
+            }
+          </p>
+        </div>
+
+        {/* Inline lead cards or empty state */}
+        {leads.length > 0 ? (
+          <div>
+            <div className="flex flex-wrap gap-3">
+              {leads.map(lead => (
+                <LeadMiniCard key={lead.id} lead={lead} />
+              ))}
+            </div>
+            <a
+              href="/venue/dashboard/leads"
+              className="inline-block mt-5 text-xs text-pm-accent hover:underline font-medium"
+            >
+              View all {leadCount} leads →
+            </a>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm text-pm-muted leading-relaxed">
+              No enquiries yet. Players can message you directly from your listing page.
+            </p>
+            {listing && (
+              <a
+                href={`/${listing.slug}`}
+                className="inline-block mt-3 text-xs text-pm-accent hover:underline font-medium"
+              >
+                View your listing →
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* WhatsApp tip */}
+        {listing && !listing.whatsapp_number && (
+          <p className="mt-4 text-xs text-pm-faint">
+            Add your WhatsApp number to let players message you directly.{' '}
+            <a href="/venue/dashboard/listing" className="text-[#c4956a] hover:underline">
+              Update in Your Listing →
+            </a>
+          </p>
+        )}
+      </Section>
+
+      {/* ── 4. GOOGLE REPUTATION ── */}
       {googleReview && !googleReview.notFound && googleReview.rating != null && (
         <Section label="Google Reputation">
           <div className="flex flex-wrap gap-x-16 gap-y-8">
@@ -461,90 +522,26 @@ export default function DashboardOverview() {
         </Section>
       )}
 
-      {/* ── WEEKEND WEATHER ── */}
-      {weather && weather.days && (
-        <section className="mt-6 sm:mt-8">
-          <p className="text-xs font-medium text-pm-muted uppercase tracking-wider mb-3">
-            This weekend in {weather.city || 'your area'}
-          </p>
-          <div className="flex items-center gap-6 text-sm text-pm-text">
-            {weather.days.map(day => (
-              <span key={day.date} className="flex items-center gap-1.5">
-                <span className="text-pm-muted">{day.dayName}</span>
-                <span>{day.emoji}</span>
-                <span>{day.temp}°C</span>
-              </span>
-            ))}
-          </div>
-          {weather.advice && (
-            <p className="text-xs text-pm-faint mt-2 italic">{weather.advice}</p>
+      {/* ── 5. COURT UTILISATION ── */}
+      {(isPremium || isTrial) && (
+        <Section label="Court Utilisation">
+          {listing?.playtomic_tenant_id ? (
+            <CourtUtilisationCard
+              tenantId={listing.playtomic_tenant_id}
+              totalCourts={listing.courts ?? listing.courts_count ?? 1}
+            />
+          ) : (
+            <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
+              Court utilisation data isn&apos;t available for your venue yet. If you&apos;re on Playtomic,
+              add your venue URL in{' '}
+              <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>{' '}
+              and we&apos;ll connect it automatically.
+            </p>
           )}
-        </section>
+        </Section>
       )}
 
-      {/* ── PLAYER LEADS ── */}
-      <Section label="Player Leads">
-        {/* Big number */}
-        <div className="mb-6">
-          <div className="flex items-baseline gap-3">
-            <p className="font-serif text-6xl tracking-tight text-pm-text">
-              {leadCount.toLocaleString()}
-            </p>
-            {unreadCount > 0 && (
-              <span className="w-2.5 h-2.5 rounded-full bg-pm-accent shrink-0" />
-            )}
-          </div>
-          <p className="text-sm text-pm-muted mt-2">
-            {unreadCount > 0
-              ? `${unreadCount} new enquir${unreadCount === 1 ? 'y' : 'ies'}`
-              : 'Total'
-            }
-          </p>
-        </div>
-
-        {/* Inline lead cards or empty state */}
-        {leads.length > 0 ? (
-          <div>
-            <div className="flex flex-wrap gap-3">
-              {leads.map(lead => (
-                <LeadMiniCard key={lead.id} lead={lead} />
-              ))}
-            </div>
-            <a
-              href="/venue/dashboard/leads"
-              className="inline-block mt-5 text-xs text-pm-accent hover:underline font-medium"
-            >
-              View all {leadCount} leads →
-            </a>
-          </div>
-        ) : (
-          <div>
-            <p className="text-sm text-pm-muted leading-relaxed">
-              No enquiries yet. Players can message you directly from your listing page.
-            </p>
-            {listing && (
-              <a
-                href={`/${listing.slug}`}
-                className="inline-block mt-3 text-xs text-pm-accent hover:underline font-medium"
-              >
-                View your listing →
-              </a>
-            )}
-          </div>
-        )}
-      </Section>
-
-      {/* ── WhatsApp tip ── */}
-      {listing && !listing.whatsapp_number && (
-        <p className="mt-4 text-xs text-pm-faint">
-          Add your WhatsApp number to let players message you directly.{' '}
-          <a href="/venue/dashboard/listing" className="text-[#c4956a] hover:underline">
-            Update in Your Listing →
-          </a>
-        </p>
-      )}
-
-      {/* ── LOCAL COMPETITION ── */}
+      {/* ── 6. LOCAL COMPETITION ── */}
       {competitors && (
         <Section label="Local Competition">
           {competitors.count === 0 ? (
@@ -591,31 +588,30 @@ export default function DashboardOverview() {
         </Section>
       )}
 
-      {/* ── GOOGLE BUSINESS PROFILE ── */}
-      <Section label="Google Business Profile">
-        {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
-      </Section>
-
-      {/* ── COURT UTILISATION ── */}
-      {(isPremium || isTrial) && (
-        <Section label="Court Utilisation">
-          {listing?.playtomic_tenant_id ? (
-            <CourtUtilisationCard
-              tenantId={listing.playtomic_tenant_id}
-              totalCourts={listing.courts ?? listing.courts_count ?? 1}
-            />
-          ) : (
-            <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
-              Court utilisation data isn&apos;t available for your venue yet. If you&apos;re on Playtomic,
-              add your venue URL in{' '}
-              <a href="/venue/dashboard/listing" className="text-pm-accent hover:underline">Your Listing</a>{' '}
-              and we&apos;ll connect it automatically.
-            </p>
+      {/* ── 7. WEEKEND WEATHER ── */}
+      {weather && weather.days && (
+        <Section label={`This Weekend in ${weather.city || 'Your Area'}`}>
+          <div className="flex items-center gap-6 text-sm text-pm-text">
+            {weather.days.map(day => (
+              <span key={day.date} className="flex items-center gap-1.5">
+                <span className="text-pm-muted">{day.dayName}</span>
+                <span>{day.emoji}</span>
+                <span>{day.temp}°C</span>
+              </span>
+            ))}
+          </div>
+          {weather.advice && (
+            <p className="text-xs text-pm-faint mt-2 italic">{weather.advice}</p>
           )}
         </Section>
       )}
 
-      {/* ── YOUR LISTING ── */}
+      {/* ── 8. GOOGLE BUSINESS PROFILE ── */}
+      <Section label="Google Business Profile">
+        {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
+      </Section>
+
+      {/* ── 9. YOUR LISTING ── */}
       {listing && (
         <Section label="Your Listing">
           <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">

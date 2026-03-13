@@ -41,7 +41,7 @@ export default function CourtUtilisationCard({ tenantId, totalCourts }: Props) {
   if (loading) {
     return (
       <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
-        <p className="label-caps mb-4">Court Utilisation</p>
+        <p className="text-xs text-pm-faint mb-4">Loading utilisation data...</p>
         <div className="flex items-center justify-center py-10">
           <div className="w-5 h-5 border-2 border-pm-accent border-t-transparent rounded-full animate-spin" />
         </div>
@@ -56,7 +56,6 @@ export default function CourtUtilisationCard({ tenantId, totalCourts }: Props) {
   return (
     <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
       <div className="flex items-center justify-between mb-6">
-        <p className="label-caps">Court Utilisation</p>
         <span className="text-[10px] text-pm-faint">Next 7 days</span>
       </div>
 
