@@ -24,11 +24,24 @@ export async function GET() {
 
   const now = new Date().toISOString().split('T')[0];
 
+  // Gear product slugs
+  const { data: gearProducts } = await supabase
+    .from('gear_products')
+    .select('slug')
+    .not('slug', 'is', null);
+
   const staticPages = [
     { url: '', priority: '1.0', freq: 'daily' },
     { url: '/find', priority: '0.9', freq: 'daily' },
     { url: '/gear', priority: '0.8', freq: 'weekly' },
     { url: '/gear/shop', priority: '0.8', freq: 'daily' },
+    // Gear category index pages
+    { url: '/gear/rackets', priority: '0.8', freq: 'weekly' },
+    { url: '/gear/balls', priority: '0.7', freq: 'weekly' },
+    { url: '/gear/shoes', priority: '0.7', freq: 'weekly' },
+    { url: '/gear/bags', priority: '0.7', freq: 'weekly' },
+    { url: '/gear/clothing', priority: '0.7', freq: 'weekly' },
+    { url: '/gear/accessories', priority: '0.7', freq: 'weekly' },
     { url: '/quiz', priority: '0.7', freq: 'monthly' },
     { url: '/demo', priority: '0.6', freq: 'monthly' },
     // Editorial guides
@@ -74,6 +87,12 @@ export async function GET() {
 
   for (const area of postcodeAreas) {
     xml += `  <url><loc>${BASE}/courts/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  }
+
+  // Gear product pages
+  for (const product of (gearProducts || [])) {
+    if (!product.slug) continue;
+    xml += `  <url><loc>${BASE}/gear/${product.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.5</priority></url>\n`;
   }
 
   xml += '</urlset>';

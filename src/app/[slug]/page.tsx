@@ -260,6 +260,16 @@ export default async function ListingPage({ params }: Props) {
         </section>
       )}
 
+      {/* ── Gear CTA ── */}
+      <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4 text-center">
+        <p className="text-sm text-pm-muted">
+          Need gear?{" "}
+          <a href="/gear" className="text-pm-accent hover:text-pm-text transition-colors font-medium">
+            Shop padel gear →
+          </a>
+        </p>
+      </section>
+
       {/* ── Report issue ── */}
       <section className="mt-12 pt-6 border-t border-pm-border/30 text-center">
         <ReportListingModal listingId={listing.id} venueName={listing.name} />
