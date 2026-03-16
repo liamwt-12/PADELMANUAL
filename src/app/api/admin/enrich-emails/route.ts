@@ -149,21 +149,32 @@ export async function POST(request: NextRequest) {
     { auth: { persistSession: false } },
   )
 
+  // Pagination
+  const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '50') || 50, 1), 200)
+  const offset = Math.max(parseInt(request.nextUrl.searchParams.get('offset') || '0') || 0, 0)
+
   // Fetch listings with no email that aren't permanently closed
-  const { data: listings, error } = await supabase
+  const { data: allListings, error, count } = await supabase
     .from('listings')
-    .select('id, name, city, google_place_id, website_url, phone')
+    .select('id, name, city, google_place_id, website_url, phone', { count: 'exact' })
     .is('email', null)
     .or('permanently_closed.is.null,permanently_closed.eq.false')
     .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  if (!listings || listings.length === 0) {
-    return NextResponse.json({ message: 'No listings need enrichment', processed: 0, place_id_found: 0, website_found: 0, phone_found: 0, email_found: 0, errors: 0, log: [] })
+  const totalRemaining = count || 0
+
+  if (!allListings || allListings.length === 0) {
+    return NextResponse.json({ message: 'No listings need enrichment', processed: 0, total_remaining: totalRemaining, place_id_found: 0, website_found: 0, phone_found: 0, email_found: 0, errors: 0, next_offset: null, log: [] })
   }
+
+  const listings = allListings
+  const hasMore = offset + limit < totalRemaining
+  const nextOffset = hasMore ? offset + limit : null
 
   const log: LogEntry[] = []
   let placeIdFoundCount = 0
@@ -261,15 +272,15 @@ export async function POST(request: NextRequest) {
     log.push(entry)
   }
 
-  // ── Pass 2: Scrape emails from newly discovered websites ──
-  // Also pick up any listings that already had website_url but no email (and weren't caught by pass 1)
+  // ── Pass 2: Scrape emails from websites in this batch ──
+  // Re-fetch the same batch IDs to catch newly-added website_urls from pass 1
+  const batchIds = listings.map(l => l.id)
   const { data: scrapeable } = await supabase
     .from('listings')
     .select('id, name, website_url')
     .is('email', null)
     .not('website_url', 'is', null)
-    .or('permanently_closed.is.null,permanently_closed.eq.false')
-    .order('created_at', { ascending: false })
+    .in('id', batchIds)
 
   if (scrapeable && scrapeable.length > 0) {
     for (const listing of scrapeable) {
@@ -305,6 +316,10 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     processed: listings.length,
+    total_remaining: totalRemaining,
+    offset,
+    limit,
+    next_offset: nextOffset,
     place_id_found: placeIdFoundCount,
     website_found: websiteFoundCount,
     phone_found: phoneFoundCount,
