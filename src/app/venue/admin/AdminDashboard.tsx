@@ -76,6 +76,10 @@ export default function AdminDashboard({
   const [triggeringFeatured, setTriggeringFeatured] = useState(false)
   const [triggeringOutreach, setTriggeringOutreach] = useState(false)
   const [actionResult, setActionResult] = useState('')
+  const [outreachSearch, setOutreachSearch] = useState('')
+  const [outreachResults, setOutreachResults] = useState<{ id: string; name: string; city: string | null; email: string | null; manually_outreached_at: string | null }[]>([])
+  const [outreachSearching, setOutreachSearching] = useState(false)
+  const [outreachMarked, setOutreachMarked] = useState<Set<string>>(new Set())
 
   async function triggerCron(path: string, setter: (v: boolean) => void) {
     setter(true)
@@ -88,6 +92,31 @@ export default function AdminDashboard({
       setActionResult(`Error: ${err}`)
     }
     setter(false)
+  }
+
+  async function searchOutreach(q: string) {
+    setOutreachSearch(q)
+    if (q.trim().length < 2) { setOutreachResults([]); return }
+    setOutreachSearching(true)
+    try {
+      const res = await fetch(`/api/admin/manual-outreach?q=${encodeURIComponent(q)}`)
+      const data = await res.json()
+      setOutreachResults(data.venues || [])
+    } catch { setOutreachResults([]) }
+    setOutreachSearching(false)
+  }
+
+  async function markOutreached(listingId: string) {
+    try {
+      await fetch('/api/admin/manual-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: listingId }),
+      })
+      setOutreachMarked(prev => new Set(prev).add(listingId))
+    } catch {
+      setActionResult('Failed to mark outreached')
+    }
   }
 
   async function approveSubmission(id: string) {
@@ -131,6 +160,65 @@ export default function AdminDashboard({
           {actionResult}
         </pre>
       )}
+
+      {/* Manual Outreach */}
+      <section className="mb-10">
+        <h2 className="font-serif text-xl tracking-tight text-pm-text mb-4">
+          Manual Outreach
+        </h2>
+        <p className="text-xs text-pm-faint mb-3">
+          Search for a venue and mark it as manually outreached. The automated cron will skip it for 30 days.
+        </p>
+        <input
+          type="text"
+          value={outreachSearch}
+          onChange={(e) => searchOutreach(e.target.value)}
+          placeholder="Search venues by name..."
+          className="w-full max-w-md px-4 py-2.5 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent"
+        />
+        {outreachSearching && (
+          <p className="mt-2 text-xs text-pm-faint">Searching...</p>
+        )}
+        {outreachResults.length > 0 && (
+          <div className="mt-3 rounded-2xl border border-pm-border bg-pm-bg-card divide-y divide-pm-border/40">
+            {outreachResults.map(v => {
+              const justMarked = outreachMarked.has(v.id)
+              const recentlyOutreached = v.manually_outreached_at && (Date.now() - new Date(v.manually_outreached_at).getTime() < 30 * 24 * 60 * 60 * 1000)
+              return (
+                <div key={v.id} className="px-5 py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-pm-text truncate">{v.name}</p>
+                    <p className="text-xs text-pm-faint mt-0.5">
+                      {v.city || 'No city'}
+                      {v.email && <> · {v.email}</>}
+                    </p>
+                    {(recentlyOutreached || justMarked) && !justMarked && v.manually_outreached_at && (
+                      <p className="text-[10px] text-amber-600 mt-0.5">
+                        Outreached {new Date(v.manually_outreached_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0">
+                    {justMarked ? (
+                      <span className="text-[10px] font-medium text-emerald-600">Marked today</span>
+                    ) : (
+                      <button
+                        onClick={() => markOutreached(v.id)}
+                        className="text-[10px] font-medium text-pm-accent hover:underline whitespace-nowrap"
+                      >
+                        Manually outreached today
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {outreachSearch.length >= 2 && !outreachSearching && outreachResults.length === 0 && (
+          <p className="mt-2 text-xs text-pm-faint">No venues found.</p>
+        )}
+      </section>
 
       {/* Venue Submissions */}
       <section className="mb-10">

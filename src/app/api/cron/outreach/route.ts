@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   // Get unclaimed venues from those listings
   const { data: venues } = await supabase
     .from('listings')
-    .select('id, name, slug, email, contact_email, view_count, website_url, google_place_id')
+    .select('id, name, slug, email, contact_email, view_count, website_url, google_place_id, manually_outreached_at')
     .in('id', listingIds)
     .neq('claimed', true)
     .neq('permanently_closed', true)
@@ -109,7 +109,16 @@ export async function GET(request: NextRequest) {
     .in('status', ['sent', 'pending'])
 
   const sentIds = new Set((alreadySent || []).map(r => r.listing_id))
-  const eligible = venues.filter(v => !sentIds.has(v.id))
+
+  // Skip venues manually outreached within the last 30 days
+  const eligible = venues.filter(v => {
+    if (sentIds.has(v.id)) return false
+    if (v.manually_outreached_at) {
+      const manualDate = new Date(v.manually_outreached_at).getTime()
+      if (Date.now() - manualDate < 30 * 24 * 60 * 60 * 1000) return false
+    }
+    return true
+  })
 
   let sent = 0
   let skipped = 0

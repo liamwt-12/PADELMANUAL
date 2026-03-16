@@ -34,6 +34,7 @@ export type Listing = {
   announcement?: string | null;
   permanently_closed?: boolean;
   closed_at?: string | null;
+  manually_outreached_at?: string | null;
 
   // Google Reviews
   google_place_id?: string | null;
