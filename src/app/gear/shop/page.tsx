@@ -11,11 +11,12 @@ export const revalidate = 3600;
 
 export default async function GearShopPage() {
   const supabase = getSupabase();
-  const { data: products } = await supabase
-    .from('gear_products')
-    .select('*')
-    .order('category')
-    .order('name');
+  const cols = 'id, name, slug, brand, category, price, compare_price, image, product_url, affiliate_url, shape, gender, featured';
+  const [{ data: p1 }, { data: p2 }] = await Promise.all([
+    supabase.from('gear_products').select(cols).order('category').order('name').range(0, 999),
+    supabase.from('gear_products').select(cols).order('category').order('name').range(1000, 2999),
+  ]);
+  const products = [...(p1 || []), ...(p2 || [])];
 
   // Get unique brands and categories
   const brands = [...new Set((products || []).map(p => p.brand).filter(Boolean))].sort();

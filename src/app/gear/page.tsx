@@ -22,10 +22,12 @@ const CATEGORIES = [
 export default async function GearIndex() {
   const supabase = getSupabase();
 
-  // Category counts
-  const { data: allProducts } = await supabase
-    .from("gear_products")
-    .select("category");
+  // Category counts — paginate past Supabase 1000-row default
+  const [{ data: c1 }, { data: c2 }] = await Promise.all([
+    supabase.from("gear_products").select("category").range(0, 999),
+    supabase.from("gear_products").select("category").range(1000, 2999),
+  ]);
+  const allProducts = [...(c1 || []), ...(c2 || [])];
 
   const counts: Record<string, number> = {};
   (allProducts || []).forEach((p) => {
