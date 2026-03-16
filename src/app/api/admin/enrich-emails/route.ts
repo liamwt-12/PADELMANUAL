@@ -110,14 +110,25 @@ async function getPlaceDetails(placeId: string) {
     },
   )
   if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Places detail error ${res.status}: ${text}`)
+    const text = await res.text().catch(() => 'unable to read body')
+    throw new Error(`Places detail error ${res.status}: ${text.slice(0, 300)}`)
   }
   return res.json()
 }
 
 function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/** Sanitise error values so they survive JSON.stringify */
+function safeError(err: unknown): string {
+  try {
+    const raw = err instanceof Error ? err.message : String(err)
+    // Strip control chars and truncate to avoid bloating the response
+    return raw.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 500)
+  } catch {
+    return 'Unknown error'
+  }
 }
 
 // ── types ──
@@ -253,20 +264,22 @@ export async function POST(request: NextRequest) {
           .update(updates)
           .eq('id', listing.id)
         if (updateErr) {
-          entry.error = `DB update failed: ${updateErr.message}`
+          entry.error = `DB update failed: ${safeError(updateErr)}`
           errorCount++
         }
       }
     } catch (err) {
-      entry.error = String(err)
+      const msg = safeError(err)
       errorCount++
 
       // Handle quota errors gracefully
-      if (String(err).includes('429') || String(err).includes('RESOURCE_EXHAUSTED')) {
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
         entry.error = 'Google API quota exceeded — stopping'
         log.push(entry)
         break
       }
+
+      entry.error = msg
     }
 
     log.push(entry)
@@ -305,7 +318,7 @@ export async function POST(request: NextRequest) {
           emailFoundCount++
         }
       } catch (err) {
-        entry.error = String(err)
+        entry.error = safeError(err)
         errorCount++
       }
 
@@ -314,17 +327,36 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({
-    processed: listings.length,
-    total_remaining: totalRemaining,
-    offset,
-    limit,
-    next_offset: nextOffset,
-    place_id_found: placeIdFoundCount,
-    website_found: websiteFoundCount,
-    phone_found: phoneFoundCount,
-    email_found: emailFoundCount,
-    errors: errorCount,
-    log,
-  })
+  // Safely build response — catch any JSON serialisation issues
+  try {
+    return NextResponse.json({
+      processed: listings.length,
+      total_remaining: totalRemaining,
+      offset,
+      limit,
+      next_offset: nextOffset,
+      place_id_found: placeIdFoundCount,
+      website_found: websiteFoundCount,
+      phone_found: phoneFoundCount,
+      email_found: emailFoundCount,
+      errors: errorCount,
+      log,
+    })
+  } catch (jsonErr) {
+    // If serialisation still fails, return summary without the full log
+    return NextResponse.json({
+      processed: listings.length,
+      total_remaining: totalRemaining,
+      offset,
+      limit,
+      next_offset: nextOffset,
+      place_id_found: placeIdFoundCount,
+      website_found: websiteFoundCount,
+      phone_found: phoneFoundCount,
+      email_found: emailFoundCount,
+      errors: errorCount,
+      log_error: `Log serialisation failed: ${safeError(jsonErr)}`,
+      log: log.map(e => ({ ...e, error: e.error ? e.error.slice(0, 200) : undefined })),
+    })
+  }
 }
