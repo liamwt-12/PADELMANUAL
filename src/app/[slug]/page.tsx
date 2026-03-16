@@ -137,6 +137,9 @@ export default async function ListingPage({ params }: Props) {
           {listing.whatsapp_number && (
             <LinkPill label="Message on WhatsApp" href={`https://wa.me/${listing.whatsapp_number.replace(/\D/g, '')}?text=${encodeURIComponent('Hi, I found your venue on Padel Manual and wanted to get in touch.')}`} />
           )}
+          {listing.phone && (
+            <LinkPill label={`Call ${listing.phone}`} href={`tel:${listing.phone.replace(/\s/g, '')}`} />
+          )}
           {listing.instagram_url && <LinkPill label="Instagram" href={listing.instagram_url} />}
           {lat && lng && (
             <LinkPill label="Directions" href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`} />
