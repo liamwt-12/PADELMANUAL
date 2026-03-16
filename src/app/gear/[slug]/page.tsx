@@ -43,8 +43,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 // ── Page ──
 
+// Category routes have their own pages — prevent [slug] from handling them
+const CATEGORY_ROUTES = new Set(['rackets', 'balls', 'shoes', 'bags', 'clothing', 'accessories', 'grips', 'shop']);
+
 export default async function GearPage({ params }: Props) {
   const { slug } = await params;
+
+  // Category routes are handled by /gear/rackets/page.tsx etc.
+  if (CATEGORY_ROUTES.has(slug)) notFound();
 
   // ── Editorial guide ──
   const gear = getGearBySlug(slug);
