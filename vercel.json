@@ -11,7 +11,7 @@
     },
     {
       "path": "/api/cron/outreach",
-      "schedule": "0 9 * * 1"
+      "schedule": "0 9 * * 1-5"
     },
     {
       "path": "/api/cron/trial-followup",

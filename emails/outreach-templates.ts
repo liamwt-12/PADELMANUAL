@@ -27,7 +27,9 @@ ${SITE_URL}/${claimSlug}
 —
 Liam
 Padel Manual
-padelmanual.com`,
+padelmanual.com
+
+PS. If this isn't relevant to you, just reply and I'll remove you from future emails.`,
   }
 }
 

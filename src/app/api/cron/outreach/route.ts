@@ -3,14 +3,24 @@ import { createClient } from '@supabase/supabase-js'
 import { outreachEmail } from '@/../emails/outreach-templates'
 
 export const runtime = 'nodejs'
+export const maxDuration = 300
 
 /**
- * Automated weekly outreach to unclaimed venues that have leads.
- * Runs every Monday at 9am UTC via Vercel Cron.
+ * Automated outreach to unclaimed venues.
+ * Runs weekdays at 9am UTC via Vercel Cron, or triggered from admin dashboard.
+ *
+ * Query params:
+ *   batch_size  — how many to send (default 50, max 100)
+ *   preview     — if "true", return eligible count without sending
  */
 export async function GET(request: NextRequest) {
+  // Auth: accept cron secret OR admin cookie
   const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const adminCookie = request.cookies.get('admin_secret')?.value
+  const cronOk = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const adminOk = adminCookie === process.env.ADMIN_SECRET
+
+  if (!cronOk && !adminOk) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -19,10 +29,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Resend not configured' }, { status: 500 })
   }
 
+  const batchSize = Math.min(
+    Math.max(parseInt(request.nextUrl.searchParams.get('batch_size') || '50') || 50, 1),
+    100,
+  )
+  const isPreview = request.nextUrl.searchParams.get('preview') === 'true'
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
+    { auth: { persistSession: false } },
   )
 
   // ── Helper: scrape contact email from a website ──
@@ -39,78 +55,70 @@ export async function GET(request: NextRequest) {
         if (!res.ok) return null
         const html = await res.text()
 
-        // Look for mailto: links first (most reliable)
         const mailtoMatch = html.match(/mailto:([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)
         if (mailtoMatch) return mailtoMatch[1].toLowerCase()
 
-        // Fall back to regex across page
         const allEmails = [...new Set((html.match(EMAIL_PATTERN) || []).map(e => e.toLowerCase()))]
           .filter(e => !e.endsWith('.png') && !e.endsWith('.jpg') && !e.endsWith('.svg') && !e.includes('example.com') && !e.includes('sentry'))
 
-        // Prefer common contact prefixes
         const priorityEmail = allEmails.find(e =>
-          PRIORITY_PREFIXES.some(p => e.startsWith(p + '@'))
+          PRIORITY_PREFIXES.some(p => e.startsWith(p + '@')),
         )
         if (priorityEmail) return priorityEmail
-
         return allEmails[0] || null
       } catch {
         return null
       }
     }
 
-    // Try homepage first
     const fromHomepage = await extractFromPage(websiteUrl)
     if (fromHomepage) return fromHomepage
 
-    // Try /contact page
     try {
       const base = new URL(websiteUrl)
-      const contactUrl = `${base.origin}/contact`
-      return await extractFromPage(contactUrl)
+      return await extractFromPage(`${base.origin}/contact`)
     } catch {
       return null
     }
   }
 
-  // Find unclaimed venues with leads in the last 30 days
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
 
+  // ── Get recent lead counts per listing ──
   const { data: recentLeads } = await supabase
     .from('listing_leads')
     .select('listing_id')
     .gte('created_at', thirtyDaysAgo)
 
-  if (!recentLeads || recentLeads.length === 0) {
-    return NextResponse.json({ message: 'No recent leads found', sent: 0 })
+  const leadCounts: Record<string, number> = {}
+  for (const l of recentLeads || []) {
+    leadCounts[l.listing_id] = (leadCounts[l.listing_id] || 0) + 1
   }
 
-  // Unique listing IDs with recent leads
-  const listingIds = [...new Set(recentLeads.map(l => l.listing_id))]
-
-  // Get unclaimed venues from those listings
+  // ── Get all unclaimed, non-closed venues with an email ──
   const { data: venues } = await supabase
     .from('listings')
-    .select('id, name, slug, email, contact_email, view_count, website_url, google_place_id, manually_outreached_at')
-    .in('id', listingIds)
+    .select('id, name, slug, email, contact_email, view_count, city, website_url, google_place_id, manually_outreached_at')
     .neq('claimed', true)
-    .neq('permanently_closed', true)
+    .or('permanently_closed.is.null,permanently_closed.eq.false')
+    .or('email.neq.null,contact_email.neq.null')
+    .limit(2000)
 
   if (!venues || venues.length === 0) {
-    return NextResponse.json({ message: 'No unclaimed venues with leads', sent: 0 })
+    return NextResponse.json({ message: 'No eligible venues', eligible: 0, sent: 0 })
   }
 
-  // Check outreach_log to avoid double-emailing
+  // ── Filter out already-sent and recently manually-outreached ──
+  const venueIds = venues.map(v => v.id)
   const { data: alreadySent } = await supabase
     .from('outreach_log')
     .select('listing_id')
-    .in('listing_id', venues.map(v => v.id))
+    .in('listing_id', venueIds)
     .eq('type', 'outreach')
     .in('status', ['sent', 'pending'])
 
   const sentIds = new Set((alreadySent || []).map(r => r.listing_id))
 
-  // Skip venues manually outreached within the last 30 days
   const eligible = venues.filter(v => {
     if (sentIds.has(v.id)) return false
     if (v.manually_outreached_at) {
@@ -120,26 +128,45 @@ export async function GET(request: NextRequest) {
     return true
   })
 
+  // ── Priority sort ──
+  eligible.sort((a, b) => {
+    const aLeads = leadCounts[a.id] || 0
+    const bLeads = leadCounts[b.id] || 0
+    // 1. Venues with leads first (desc)
+    if (aLeads !== bLeads) return bLeads - aLeads
+    // 2. Higher view counts first
+    const aViews = a.view_count || 0
+    const bViews = b.view_count || 0
+    if (aViews !== bViews) return bViews - aViews
+    // 3. Alphabetically by city
+    return (a.city || '').localeCompare(b.city || '')
+  })
+
+  // ── Preview mode: just return the count ──
+  if (isPreview) {
+    return NextResponse.json({
+      eligible: eligible.length,
+      with_leads: eligible.filter(v => (leadCounts[v.id] || 0) > 0).length,
+      batch_size: batchSize,
+    })
+  }
+
+  // ── Send batch ──
   let sent = 0
   let skipped = 0
-  const maxPerWeek = 10
+  const batch = eligible.slice(0, batchSize)
 
-  for (const venue of eligible.slice(0, maxPerWeek)) {
+  for (const venue of batch) {
     let email = venue.contact_email || venue.email
 
-    // Auto-scrape contact email if none found
+    // Auto-scrape if no email
     if (!email && venue.website_url) {
       email = await scrapeContactEmail(venue.website_url)
       if (email) {
-        // Store found email for future use
-        await supabase
-          .from('listings')
-          .update({ email })
-          .eq('id', venue.id)
+        await supabase.from('listings').update({ email }).eq('id', venue.id)
       }
     }
 
-    // Fallback: try Google Places for website, then scrape that
     if (!email && venue.google_place_id) {
       try {
         const placesKey = process.env.GOOGLE_PLACES_API_KEY
@@ -151,10 +178,7 @@ export async function GET(request: NextRequest) {
           if (website) {
             email = await scrapeContactEmail(website)
             if (email) {
-              await supabase
-                .from('listings')
-                .update({ email, website_url: website })
-                .eq('id', venue.id)
+              await supabase.from('listings').update({ email, website_url: website }).eq('id', venue.id)
             }
           }
         }
@@ -212,13 +236,14 @@ export async function GET(request: NextRequest) {
         email,
         type: 'outreach',
         status: 'failed',
-        notes: String(err),
+        notes: String(err).slice(0, 500),
       })
     }
   }
 
-  // Send weekly summary to admin
-  const totalWithLeads = listingIds.length
+  const remaining = eligible.length - batch.length
+
+  // Summary email to admin
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -228,10 +253,16 @@ export async function GET(request: NextRequest) {
     body: JSON.stringify({
       from: 'Padel Manual <hello@padelmanual.com>',
       to: ['hello@padelmanual.com'],
-      subject: `Outreach summary: ${sent} sent, ${skipped} skipped`,
-      text: `Weekly outreach summary:\n\n- Venues with leads (last 30 days): ${totalWithLeads}\n- Emails sent this week: ${sent}\n- Skipped (no contact): ${skipped}\n- Already contacted: ${sentIds.size}\n- Eligible remaining: ${eligible.length - sent - skipped}`,
+      subject: `Outreach: ${sent} sent, ${skipped} skipped, ${remaining} remaining`,
+      text: `Outreach batch summary:\n\n- Batch size: ${batchSize}\n- Emails sent: ${sent}\n- Skipped (no contact): ${skipped}\n- Remaining eligible: ${remaining}\n- Total venues checked: ${venues.length}`,
     }),
   })
 
-  return NextResponse.json({ sent, skipped, total: eligible.length })
+  return NextResponse.json({
+    sent,
+    skipped,
+    batch_size: batchSize,
+    eligible: eligible.length,
+    remaining,
+  })
 }
