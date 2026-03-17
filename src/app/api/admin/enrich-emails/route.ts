@@ -261,8 +261,14 @@ export async function POST(request: NextRequest) {
     .range(offset, offset + limit - 1)
 
   if (error) {
-    console.error('[enrich-emails] Supabase query failed:', error)
-    return jsonResponse({ error: safeString(error.message) }, 500)
+    console.error('[enrich-emails] Supabase query failed:', JSON.stringify(error))
+    return jsonResponse({
+      error: 'Supabase query failed',
+      supabase_code: safeString(error.code || ''),
+      supabase_message: safeString(error.message || ''),
+      supabase_details: safeString(error.details || ''),
+      supabase_hint: safeString(error.hint || ''),
+    }, 500)
   }
 
   const totalRemaining = count || 0
