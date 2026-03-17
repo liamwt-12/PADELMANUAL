@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
@@ -8,11 +8,26 @@ import PricingSection from '@/components/PricingSection'
 import ManageBillingButton from '@/components/ManageBillingButton'
 
 function MultiVenuePricing({ venueCount }: { venueCount: number }) {
+  const [loading, setLoading] = useState(false)
   const perVenueMonthly = 29
   const perVenueAnnual = 249
   const multiMonthly = 99
   const multiAnnual = 849
   const savingMonthly = (perVenueMonthly * venueCount) - multiMonthly
+
+  function handleUpgradeAll() {
+    setLoading(true)
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = '/api/stripe/checkout'
+    const input = document.createElement('input')
+    input.type = 'hidden'
+    input.name = 'plan'
+    input.value = 'multi'
+    form.appendChild(input)
+    document.body.appendChild(form)
+    form.submit()
+  }
 
   return (
     <div>
@@ -57,12 +72,13 @@ function MultiVenuePricing({ venueCount }: { venueCount: number }) {
           <p className="text-xs text-pm-faint mt-1">
             &pound;{multiAnnual}/year
           </p>
-          <a
-            href={`mailto:hello@padelmanual.com?subject=Multi-venue upgrade — ${venueCount} venues`}
-            className="mt-6 w-full inline-block text-center rounded-full bg-[#c4956a] text-white px-6 py-3 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90"
+          <button
+            onClick={handleUpgradeAll}
+            disabled={loading}
+            className="mt-6 w-full rounded-full bg-[#c4956a] text-white px-6 py-3 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            Upgrade all {venueCount} &rarr;
-          </a>
+            {loading ? 'Redirecting...' : `Upgrade all ${venueCount}`} &rarr;
+          </button>
         </div>
       </div>
 

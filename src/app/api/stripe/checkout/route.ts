@@ -17,9 +17,11 @@ export async function POST(request: NextRequest) {
   const plan = (formData.get('plan') as string) || 'monthly'
 
   const priceId =
-    plan === 'annual'
-      ? process.env.STRIPE_PREMIUM_ANNUAL_PRICE_ID
-      : process.env.STRIPE_PREMIUM_PRICE_ID
+    plan === 'multi'
+      ? process.env.STRIPE_PREMIUM_MULTI_PRICE_ID
+      : plan === 'annual'
+        ? process.env.STRIPE_PREMIUM_ANNUAL_PRICE_ID
+        : process.env.STRIPE_PREMIUM_PRICE_ID
 
   if (!priceId) {
     return NextResponse.json({ error: 'Price not configured' }, { status: 500 })
@@ -87,9 +89,11 @@ export async function POST(request: NextRequest) {
   }
 
   const submitMessage =
-    plan === 'annual'
-      ? 'Padel Manual Business — annual plan, £249/year. Cancel anytime.'
-      : 'Padel Manual Business — monthly plan, £29/month. Cancel anytime.'
+    plan === 'multi'
+      ? 'Padel Manual Business — all venues, £99/month. Cancel anytime.'
+      : plan === 'annual'
+        ? 'Padel Manual Business — annual plan, £249/year. Cancel anytime.'
+        : 'Padel Manual Business — monthly plan, £29/month. Cancel anytime.'
 
   // Create checkout session
   const session = await stripe.checkout.sessions.create({
