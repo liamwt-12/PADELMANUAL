@@ -25,11 +25,12 @@ export async function POST(request: NextRequest) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://padelmanual.com';
 
     // Check if they have a venue_owners row (i.e. they've claimed a venue)
-    const { data: ownerRow } = await supabase
+    const { data: ownerRows } = await supabase
       .from('venue_owners')
       .select('email')
       .eq('email', email)
-      .single();
+      .limit(1);
+    const ownerRow = ownerRows?.[0] || null;
 
     if (!ownerRow) {
       return NextResponse.json(

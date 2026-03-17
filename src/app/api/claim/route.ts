@@ -41,22 +41,35 @@ export async function POST(request: NextRequest) {
       .eq('slug', venue_slug)
       .single();
 
-    // 3. Create venue_owners row (upsert by email)
+    // 3. Create venue_owners row (one per email+listing pair)
     if (listing) {
-      const { error: ownerError } = await supabase
+      // Check if this email already owns this specific listing
+      const { data: existing } = await supabase
         .from('venue_owners')
-        .upsert(
-          {
+        .select('id')
+        .eq('email', email)
+        .eq('listing_id', listing.id)
+        .limit(1)
+
+      if (existing && existing.length > 0) {
+        // Already claimed this venue — update name if changed
+        await supabase
+          .from('venue_owners')
+          .update({ name })
+          .eq('id', existing[0].id)
+      } else {
+        const { error: ownerError } = await supabase
+          .from('venue_owners')
+          .insert({
             email,
             name,
             listing_id: listing.id,
             subscription_status: 'free',
-          },
-          { onConflict: 'email' }
-        );
+          })
 
-      if (ownerError) {
-        console.error('Venue owner upsert error:', ownerError);
+        if (ownerError) {
+          console.error('Venue owner insert error:', ownerError);
+        }
       }
 
       // Mark listing as claimed

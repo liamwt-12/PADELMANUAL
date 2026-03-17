@@ -41,11 +41,12 @@ export async function POST(req: NextRequest) {
         .eq('id', listing_id)
         .single()
 
-      const { data: owner } = await supabase
+      const { data: owners } = await supabase
         .from('venue_owners')
         .select('email, name')
         .eq('listing_id', listing_id)
-        .single()
+        .limit(1)
+      const owner = owners?.[0] || null
 
       const venueName = listing?.name || 'a venue'
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.padelmanual.com'

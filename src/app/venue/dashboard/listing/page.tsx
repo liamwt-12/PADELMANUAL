@@ -88,7 +88,7 @@ export default function ListingPage() {
     const res = await fetch('/api/listing/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, images: photos }),
+      body: JSON.stringify({ ...form, images: photos, listing_id: listing?.id }),
     })
 
     if (!res.ok) {

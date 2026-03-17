@@ -38,12 +38,16 @@ export async function POST(request: NextRequest) {
     { auth: { persistSession: false } }
   )
 
-  // Get owner + check subscription
-  const { data: owner } = await supabase
+  const body = await request.json()
+
+  // Get owner + check subscription (support multi-venue via listing_id in body)
+  let ownerQuery = supabase
     .from('venue_owners')
     .select('listing_id, subscription_status')
     .eq('email', user.email)
-    .single()
+  if (body.listing_id) ownerQuery = ownerQuery.eq('listing_id', body.listing_id)
+  const { data: owners } = await ownerQuery.limit(1)
+  const owner = owners?.[0] || null
 
   if (!owner?.listing_id) {
     return NextResponse.json({ error: 'No listing found' }, { status: 404 })
@@ -51,8 +55,6 @@ export async function POST(request: NextRequest) {
 
   const isPremium = owner.subscription_status === 'premium' || owner.subscription_status === 'trial'
   const allowedFields = isPremium ? PREMIUM_FIELDS : FREE_FIELDS
-
-  const body = await request.json()
 
   // Filter to only allowed fields with non-undefined values
   const updates: Record<string, string | string[] | null> = {}
