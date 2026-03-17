@@ -527,10 +527,7 @@ function EnrichmentSection({ emailStats }: { emailStats: { total: number; withEm
     try {
       const res = await fetch(
         `/api/admin/enrich-emails?offset=${enrichOffset}&limit=${enrichLimit}${dryRun ? '&dry_run=true' : ''}`,
-        {
-          method: 'POST',
-          headers: { 'x-admin-secret': document.cookie.match(/admin_secret=([^;]+)/)?.[1] || '' },
-        },
+        { method: 'POST' },
       )
       const data = await res.json()
       setResult(data)

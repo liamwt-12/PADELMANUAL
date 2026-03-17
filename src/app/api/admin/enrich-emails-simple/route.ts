@@ -8,6 +8,7 @@ const PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY!
 export async function POST(request: NextRequest) {
   const secret = request.headers.get('x-admin-secret')
     || request.headers.get('authorization')?.replace('Bearer ', '')
+    || request.cookies.get('admin_secret')?.value
   if (secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

@@ -228,7 +228,9 @@ function safeLogEntry(entry: LogEntry): Record<string, unknown> {
 }
 
 export async function POST(request: NextRequest) {
-  const adminSecret = request.headers.get('x-admin-secret') || request.headers.get('authorization')?.replace('Bearer ', '')
+  const adminSecret = request.headers.get('x-admin-secret')
+    || request.headers.get('authorization')?.replace('Bearer ', '')
+    || request.cookies.get('admin_secret')?.value
   if (adminSecret !== process.env.ADMIN_SECRET) {
     return jsonResponse({ error: 'Unauthorized' }, 401)
   }
