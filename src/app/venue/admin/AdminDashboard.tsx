@@ -443,9 +443,24 @@ export default function AdminDashboard({
                   {o.email} · {o.name || 'No name'}
                 </p>
               </div>
-              <span className="text-[10px] text-pm-faint capitalize shrink-0">
-                {o.subscription_status}
-              </span>
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={async () => {
+                    await fetch('/api/admin/impersonate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: o.email }),
+                    })
+                    window.location.href = '/venue/dashboard'
+                  }}
+                  className="rounded-full border border-pm-accent/40 text-pm-accent px-3 py-1 text-[11px] font-medium hover:bg-pm-accent/[0.06] transition-colors whitespace-nowrap"
+                >
+                  View dashboard &rarr;
+                </button>
+                <span className="text-[10px] text-pm-faint capitalize">
+                  {o.subscription_status}
+                </span>
+              </div>
             </div>
           ))}
         </div>

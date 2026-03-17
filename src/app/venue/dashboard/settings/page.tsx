@@ -74,7 +74,7 @@ function MultiVenuePricing({ venueCount }: { venueCount: number }) {
 }
 
 export default function SettingsPage() {
-  const { user, owner, listing, allVenues, isPremium, isTrial } = useDashboard()
+  const { user, owner, listing, allVenues, isPremium, isTrial, isImpersonating } = useDashboard()
   const router = useRouter()
   const isMultiVenue = allVenues.length > 1
 
@@ -137,7 +137,7 @@ export default function SettingsPage() {
               <p className="text-lg font-serif font-bold tracking-tight">Premium</p>
               <p className="text-xs text-pm-faint mt-0.5">Full analytics, leads, Google insights</p>
             </div>
-            {owner?.stripe_customer_id && <ManageBillingButton />}
+            {owner?.stripe_customer_id && !isImpersonating && <ManageBillingButton />}
           </div>
         ) : isTrial ? (
           <div>
@@ -145,6 +145,11 @@ export default function SettingsPage() {
             {trialEnd && (
               <p className="text-xs text-pm-faint mt-0.5">Trial ends {trialEnd}</p>
             )}
+          </div>
+        ) : isImpersonating ? (
+          <div>
+            <p className="text-lg font-serif font-bold tracking-tight">Free</p>
+            <p className="text-xs text-pm-faint mt-0.5">Upgrade controls unavailable in preview mode</p>
           </div>
         ) : isMultiVenue ? (
           <MultiVenuePricing venueCount={allVenues.length} />

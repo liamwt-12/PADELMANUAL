@@ -132,8 +132,35 @@ function VenueSwitcher() {
 
 /* ── Shell inner (inside provider) ── */
 
+function ImpersonationBanner() {
+  const { isImpersonating, impersonatedEmail, owner } = useDashboard()
+  const router = useRouter()
+
+  if (!isImpersonating) return null
+
+  async function handleExit() {
+    await fetch('/api/admin/impersonate/exit', { method: 'POST' })
+    router.push('/venue/admin')
+  }
+
+  return (
+    <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 flex items-center justify-between gap-4">
+      <p className="text-sm text-amber-900">
+        <span className="mr-1.5">&#128065;</span>
+        Viewing as <strong>{owner?.name || 'owner'}</strong> ({impersonatedEmail})
+      </p>
+      <button
+        onClick={handleExit}
+        className="text-xs font-medium text-amber-700 hover:text-amber-900 transition-colors whitespace-nowrap"
+      >
+        Exit preview &rarr;
+      </button>
+    </div>
+  )
+}
+
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { owner, listing, allVenues, isPremium, isTrial, loading } = useDashboard()
+  const { owner, listing, allVenues, isPremium, isTrial, isImpersonating, loading } = useDashboard()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -271,6 +298,9 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
         {/* ── Content area ── */}
         <div className="flex-1 min-w-0 pb-24 sm:pb-0">
+          {/* Impersonation banner — always first */}
+          <ImpersonationBanner />
+
           {/* Mobile venue switcher */}
           {isMultiVenue && (
             <div className="sm:hidden mb-4">
@@ -278,8 +308,8 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {/* Upgrade banner — every page, free users only */}
-          {!isPremium && !isTrial && (
+          {/* Upgrade banner — every page, free users only, hidden when impersonating */}
+          {!isImpersonating && !isPremium && !isTrial && (
             <div className="mb-8 rounded-2xl border border-pm-border/60 bg-pm-bg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-pm-accent">
               <div>
                 <p className="text-sm font-medium text-pm-text">Get more from your listing.</p>

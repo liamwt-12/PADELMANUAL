@@ -55,7 +55,7 @@ function getMissingFields(form: Record<string, string>, hasPhotos: boolean): { l
 }
 
 export default function ListingPage() {
-  const { listing, isPremium, isTrial, refresh } = useDashboard()
+  const { listing, isPremium, isTrial, isImpersonating, refresh } = useDashboard()
   const hasPremium = isPremium || isTrial
 
   const [form, setForm] = useState<Record<string, string>>({})
@@ -275,7 +275,8 @@ export default function ListingPage() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || isImpersonating}
+          title={isImpersonating ? 'Unavailable in preview mode' : undefined}
           className="rounded-full bg-pm-accent text-white px-8 py-3 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 w-full sm:w-auto"
         >
           {saving ? 'Saving...' : 'Save changes'}

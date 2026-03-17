@@ -36,7 +36,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // Protect dashboard routes — redirect to login if not authenticated
-  if (!user && pathname.startsWith('/venue/dashboard')) {
+  // Allow through if admin is impersonating (pm_impersonate cookie set)
+  const isImpersonating = !!request.cookies.get('pm_impersonate')?.value
+  if (!user && !isImpersonating && pathname.startsWith('/venue/dashboard')) {
     const url = request.nextUrl.clone()
     url.pathname = '/venue/login'
     return NextResponse.redirect(url)

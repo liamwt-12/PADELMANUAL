@@ -43,6 +43,8 @@ type DashboardData = {
   setActiveVenueId: (id: string) => void
   isPremium: boolean
   isTrial: boolean
+  isImpersonating: boolean
+  impersonatedEmail: string | null
   loading: boolean
   refresh: () => Promise<void>
 }
@@ -55,23 +57,44 @@ function useVenueOwner(): DashboardData {
   const [listing, setListing] = useState<Listing | null>(null)
   const [allVenues, setAllVenues] = useState<VenueInfo[]>([])
   const [activeVenueId, setActiveVenueIdState] = useState<string | null>(null)
+  const [isImpersonating, setIsImpersonating] = useState(false)
+  const [impersonatedEmail, setImpersonatedEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     const supabase = createClient()
 
+    // Check impersonation status first
+    let impEmail: string | null = null
+    try {
+      const statusRes = await fetch('/api/admin/impersonate/status')
+      const statusData = await statusRes.json()
+      if (statusData.isImpersonating && statusData.email) {
+        impEmail = statusData.email
+      }
+    } catch {}
+
+    setIsImpersonating(!!impEmail)
+    setImpersonatedEmail(impEmail)
+
+    // If impersonating, we still need the auth user for the real session
+    // but we load data for the impersonated email
     const { data: { user: authUser } } = await supabase.auth.getUser()
-    if (!authUser) {
+
+    // If not impersonating, require auth
+    if (!impEmail && !authUser) {
       setLoading(false)
       return
     }
     setUser(authUser)
 
-    // Fetch ALL venue_owner rows for this email
+    const targetEmail = impEmail || authUser!.email!
+
+    // Fetch ALL venue_owner rows for the target email
     const { data: ownerRows } = await supabase
       .from('venue_owners')
       .select('*')
-      .eq('email', authUser.email!)
+      .eq('email', targetEmail)
       .order('created_at', { ascending: true })
 
     if (!ownerRows || ownerRows.length === 0) {
@@ -154,7 +177,7 @@ function useVenueOwner(): DashboardData {
   const isTrial = owner?.subscription_status === 'trial' &&
     (owner?.trial_ends_at ? new Date(owner.trial_ends_at) > new Date() : false)
 
-  return { user, owner, listing, allVenues, activeVenueId, setActiveVenueId, isPremium, isTrial, loading, refresh }
+  return { user, owner, listing, allVenues, activeVenueId, setActiveVenueId, isPremium, isTrial, isImpersonating, impersonatedEmail, loading, refresh }
 }
 
 // Context provider — wraps the dashboard shell so all pages share one data fetch
