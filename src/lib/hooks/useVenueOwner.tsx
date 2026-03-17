@@ -77,24 +77,78 @@ function useVenueOwner(): DashboardData {
     setIsImpersonating(!!impEmail)
     setImpersonatedEmail(impEmail)
 
-    // If impersonating, we still need the auth user for the real session
-    // but we load data for the impersonated email
+    // ── Impersonation path: fetch data via server API (bypasses RLS) ──
+    if (impEmail) {
+      try {
+        const dataRes = await fetch('/api/admin/impersonate/data')
+        const data = await dataRes.json()
+        const ownerRows = data.owners || []
+        const listingSummaries = data.listingSummaries || []
+
+        if (ownerRows.length === 0) {
+          setLoading(false)
+          return
+        }
+
+        const venues: VenueInfo[] = ownerRows
+          .filter((o: VenueOwner) => o.listing_id)
+          .map((o: VenueOwner) => {
+            const l = listingSummaries.find((ls: Record<string, unknown>) => ls.id === o.listing_id)
+            return {
+              owner_id: o.id,
+              listing_id: o.listing_id!,
+              listing_name: l?.name || 'Unknown venue',
+              listing_city: l?.city || null,
+              listing_slug: l?.slug || '',
+              subscription_status: o.subscription_status,
+              view_count: l?.view_count || 0,
+              click_count: l?.click_count || 0,
+            }
+          })
+
+        setAllVenues(venues)
+
+        let storedId: string | null = null
+        try { storedId = localStorage.getItem(STORAGE_KEY) } catch {}
+        const activeId = venues.find(v => v.listing_id === storedId)?.listing_id
+          || venues[0]?.listing_id || null
+        setActiveVenueIdState(activeId)
+
+        const activeOwner = ownerRows.find((o: VenueOwner) => o.listing_id === activeId) || ownerRows[0]
+        setOwner(activeOwner as VenueOwner)
+
+        // Use the active listing from the server if it matches, otherwise fetch it
+        if (data.activeListing && data.activeListing.id === activeOwner?.listing_id) {
+          setListing(data.activeListing as Listing)
+        } else if (activeOwner?.listing_id) {
+          // Fetch via a separate server call since client can't bypass RLS
+          const listingRes = await fetch(`/api/admin/impersonate/data?listing_id=${activeOwner.listing_id}`)
+          const listingData = await listingRes.json()
+          if (listingData.activeListing) {
+            setListing(listingData.activeListing as Listing)
+          }
+        }
+      } catch (err) {
+        console.error('Impersonation data fetch failed:', err)
+      }
+      setLoading(false)
+      return
+    }
+
+    // ── Normal path: use Supabase client directly ──
     const { data: { user: authUser } } = await supabase.auth.getUser()
 
-    // If not impersonating, require auth
-    if (!impEmail && !authUser) {
+    if (!authUser) {
       setLoading(false)
       return
     }
     setUser(authUser)
 
-    const targetEmail = impEmail || authUser!.email!
-
-    // Fetch ALL venue_owner rows for the target email
+    // Fetch ALL venue_owner rows for this email
     const { data: ownerRows } = await supabase
       .from('venue_owners')
       .select('*')
-      .eq('email', targetEmail)
+      .eq('email', authUser.email!)
       .order('created_at', { ascending: true })
 
     if (!ownerRows || ownerRows.length === 0) {
