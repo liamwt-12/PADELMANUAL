@@ -251,27 +251,78 @@ export async function POST(request: NextRequest) {
 
   console.log(`[enrich-emails] Starting batch offset=${offset} limit=${limit}`)
 
-  // Fetch listings with no email that aren't permanently closed
-  const { data: allListings, error, count } = await supabase
+  // Minimal select — avoids columns with potentially broken data
+  const LISTING_FIELDS = 'id, name, city, google_place_id, website_url, phone, email'
+
+  // Fetch count separately (doesn't touch row data, so won't break)
+  const { count } = await supabase
     .from('listings')
-    .select('id, name, city, google_place_id, website_url, phone', { count: 'exact' })
+    .select('id', { count: 'exact', head: true })
+    .is('email', null)
+    .or('permanently_closed.is.null,permanently_closed.eq.false')
+
+  const totalRemaining = count || 0
+
+  // Fetch the batch
+  const { data: allListings, error } = await supabase
+    .from('listings')
+    .select(LISTING_FIELDS)
     .is('email', null)
     .or('permanently_closed.is.null,permanently_closed.eq.false')
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) {
-    console.error('[enrich-emails] Supabase query failed:', JSON.stringify(error))
-    return jsonResponse({
-      error: 'Supabase query failed',
-      supabase_code: safeString(error.code || ''),
-      supabase_message: safeString(error.message || ''),
-      supabase_details: safeString(error.details || ''),
-      supabase_hint: safeString(error.hint || ''),
-    }, 500)
-  }
+    console.error(`[enrich-emails] Batch query failed at offset=${offset}:`, JSON.stringify(error))
 
-  const totalRemaining = count || 0
+    // ── Fallback: fetch one row at a time to find the bad record ──
+    console.log(`[enrich-emails] Falling back to row-by-row fetch starting at offset=${offset}`)
+    const badRows: { offset: number; id?: string; name?: string; error: string }[] = []
+    const goodRows: Record<string, unknown>[] = []
+
+    for (let i = 0; i < limit; i++) {
+      const rowOffset = offset + i
+      const { data: singleRow, error: rowErr } = await supabase
+        .from('listings')
+        .select(LISTING_FIELDS)
+        .is('email', null)
+        .or('permanently_closed.is.null,permanently_closed.eq.false')
+        .order('created_at', { ascending: false })
+        .range(rowOffset, rowOffset)
+
+      if (rowErr) {
+        console.error(`[enrich-emails] *** BAD ROW at offset=${rowOffset}:`, JSON.stringify(rowErr))
+        badRows.push({
+          offset: rowOffset,
+          error: safeString(rowErr.message || JSON.stringify(rowErr)).slice(0, 300),
+        })
+      } else if (singleRow && singleRow.length > 0) {
+        const row = singleRow[0]
+        console.log(`[enrich-emails]   OK offset=${rowOffset} id=${row.id} name="${safeString(String(row.name || ''))}"`)
+        goodRows.push(row)
+      } else {
+        console.log(`[enrich-emails]   Empty at offset=${rowOffset}, end of results`)
+        break
+      }
+    }
+
+    return jsonResponse({
+      error: 'Batch query failed — fell back to row-by-row',
+      batch_error: {
+        code: safeString(error.code || ''),
+        message: safeString(error.message || ''),
+        details: safeString(error.details || ''),
+        hint: safeString(error.hint || ''),
+      },
+      offset,
+      limit,
+      total_remaining: totalRemaining,
+      bad_rows: badRows,
+      good_row_count: goodRows.length,
+      // If we found bad rows, skip them and process the good ones
+      skipped_bad_rows: badRows.length,
+    })
+  }
 
   if (!allListings || allListings.length === 0) {
     return jsonResponse({ message: 'No listings need enrichment', processed: 0, total_remaining: totalRemaining, place_id_found: 0, website_found: 0, phone_found: 0, email_found: 0, errors: 0, next_offset: null, log: [] })
