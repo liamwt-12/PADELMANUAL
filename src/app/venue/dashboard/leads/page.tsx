@@ -57,7 +57,7 @@ export default function LeadsPage() {
   async function handleDownloadCSV() {
     setDownloading(true)
     try {
-      const res = await fetch('/api/venue/leads-csv')
+      const res = await fetch(`/api/venue/leads-csv${listing ? `?listing_id=${listing.id}` : ''}`)
       if (!res.ok) throw new Error()
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)

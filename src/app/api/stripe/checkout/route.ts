@@ -53,11 +53,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const { data: owner } = await supabase
+  const listingId = request.nextUrl.searchParams.get('listing_id')
+    || (formData.get('listing_id') as string | null)
+  let ownerQuery = supabase
     .from('venue_owners')
     .select('id, email, name, listing_id, stripe_customer_id')
     .eq('email', user.email)
-    .single()
+  if (listingId) ownerQuery = ownerQuery.eq('listing_id', listingId)
+  const { data: owners } = await ownerQuery.limit(1)
+  const owner = owners?.[0] || null
 
   if (!owner) {
     return NextResponse.json({ error: 'No venue owner found' }, { status: 404 })

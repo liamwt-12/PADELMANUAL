@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 const DAY_NAMES = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
   const authClient = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,11 +33,14 @@ export async function GET() {
     { auth: { persistSession: false } }
   )
 
-  const { data: owner } = await supabase
+  const listingId = request.nextUrl.searchParams.get('listing_id')
+  let ownerQuery = supabase
     .from('venue_owners')
     .select('listing_id')
     .eq('email', user.email)
-    .single()
+  if (listingId) ownerQuery = ownerQuery.eq('listing_id', listingId)
+  const { data: owners } = await ownerQuery.limit(1)
+  const owner = owners?.[0] || null
 
   if (!owner?.listing_id) {
     return NextResponse.json({ bestDay: null })

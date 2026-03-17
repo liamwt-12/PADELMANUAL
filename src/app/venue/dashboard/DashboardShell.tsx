@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useState, useRef, useEffect } from 'react'
 import { VenueOwnerProvider, useDashboard } from '@/lib/hooks/useVenueOwner'
 import { createClient } from '@/lib/supabase-browser'
 
@@ -48,17 +49,91 @@ function IconBack({ className = '' }: { className?: string }) {
   )
 }
 
-const navItems = [
-  { label: 'Overview', href: '/venue/dashboard', icon: IconOverview },
-  { label: 'Your Listing', href: '/venue/dashboard/listing', icon: IconListing },
-  { label: 'Leads', href: '/venue/dashboard/leads', icon: IconLeads },
-  { label: 'Settings', href: '/venue/dashboard/settings', icon: IconSettings },
-]
+function IconAllVenues({ className = '' }: { className?: string }) {
+  return (
+    <svg className={`w-[18px] h-[18px] ${className}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+    </svg>
+  )
+}
+
+function IconChevron({ className = '' }: { className?: string }) {
+  return (
+    <svg className={`w-3.5 h-3.5 ${className}`} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+  )
+}
+
+/* ── Venue Switcher dropdown ── */
+
+function VenueSwitcher() {
+  const { allVenues, activeVenueId, setActiveVenueId, listing } = useDashboard()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  if (allVenues.length <= 1) {
+    return (
+      <p className="text-xs font-medium text-pm-text truncate">
+        {listing?.name || 'Your Venue'}
+      </p>
+    )
+  }
+
+  const activeName = allVenues.find(v => v.listing_id === activeVenueId)?.listing_name || listing?.name || 'Your Venue'
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 text-xs font-medium text-pm-text hover:text-pm-accent transition-colors w-full text-left"
+      >
+        <span className="truncate">{activeName}</span>
+        <IconChevron className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl border border-pm-border shadow-lg z-50 py-1.5">
+          {allVenues.map(v => {
+            const isActive = v.listing_id === activeVenueId
+            return (
+              <button
+                key={v.listing_id}
+                onClick={() => { setActiveVenueId(v.listing_id); setOpen(false) }}
+                className={`flex items-center gap-2.5 w-full px-4 py-2.5 text-left text-[13px] transition-colors ${
+                  isActive ? 'text-pm-text font-medium' : 'text-pm-muted hover:text-pm-text hover:bg-pm-bg-hover'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  isActive ? 'bg-pm-accent' : 'bg-pm-ash'
+                }`} />
+                <span className="truncate">{v.listing_name}</span>
+                {v.subscription_status === 'premium' && (
+                  <span className="ml-auto text-[9px] font-semibold uppercase tracking-wider text-pm-accent shrink-0">
+                    Premium
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 /* ── Shell inner (inside provider) ── */
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
-  const { owner, listing, isPremium, isTrial, loading } = useDashboard()
+  const { owner, listing, allVenues, isPremium, isTrial, loading } = useDashboard()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -117,6 +192,16 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     )
   }
 
+  const isMultiVenue = allVenues.length > 1
+
+  const navItems = [
+    { label: 'Overview', href: '/venue/dashboard', icon: IconOverview },
+    ...(isMultiVenue ? [{ label: 'All Venues', href: '/venue/dashboard/venues', icon: IconAllVenues }] : []),
+    { label: 'Your Listing', href: '/venue/dashboard/listing', icon: IconListing },
+    { label: 'Leads', href: '/venue/dashboard/leads', icon: IconLeads },
+    { label: 'Settings', href: '/venue/dashboard/settings', icon: IconSettings },
+  ]
+
   function isActive(href: string) {
     if (href === '/venue/dashboard') return pathname === href
     return pathname.startsWith(href)
@@ -168,9 +253,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
           {/* Bottom: venue info + sign out */}
           <div className="mt-auto pt-6 border-t border-pm-border/40">
-            <p className="text-xs font-medium text-pm-text truncate">
-              {listing?.name || 'Your Venue'}
-            </p>
+            <VenueSwitcher />
             <div className="flex items-center gap-1.5 mt-1">
               <span className={`w-1.5 h-1.5 rounded-full ${
                 isPremium ? 'bg-pm-accent' : isTrial ? 'bg-amber-400' : 'bg-pm-ash'
@@ -188,6 +271,13 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
 
         {/* ── Content area ── */}
         <div className="flex-1 min-w-0 pb-24 sm:pb-0">
+          {/* Mobile venue switcher */}
+          {isMultiVenue && (
+            <div className="sm:hidden mb-4">
+              <VenueSwitcher />
+            </div>
+          )}
+
           {/* Upgrade banner — every page, free users only */}
           {!isPremium && !isTrial && (
             <div className="mb-8 rounded-2xl border border-pm-border/60 bg-pm-bg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-pm-accent">

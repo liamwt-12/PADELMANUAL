@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
@@ -6,7 +6,7 @@ import { refreshAccessToken, fetchInsights } from '@/lib/gbp'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   // Get authenticated user
   const cookieStore = await cookies()
   const authClient = createServerClient(
@@ -35,11 +35,14 @@ export async function GET() {
     { auth: { persistSession: false } }
   )
 
-  const { data: owner } = await supabase
+  const listingId = request.nextUrl.searchParams.get('listing_id')
+  let ownerQuery = supabase
     .from('venue_owners')
     .select('id, gbp_access_token, gbp_refresh_token, gbp_location_id')
     .eq('email', user.email)
-    .single()
+  if (listingId) ownerQuery = ownerQuery.eq('listing_id', listingId)
+  const { data: owners } = await ownerQuery.limit(1)
+  const owner = owners?.[0] || null
 
   if (!owner?.gbp_refresh_token || !owner?.gbp_location_id) {
     return NextResponse.json({ error: 'GBP not connected' }, { status: 404 })

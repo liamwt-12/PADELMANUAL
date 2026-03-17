@@ -43,11 +43,14 @@ export async function POST(request: NextRequest) {
     { auth: { persistSession: false } }
   )
 
-  const { data: owner } = await supabase
+  const listingId = request.nextUrl.searchParams.get('listing_id')
+  let ownerQuery = supabase
     .from('venue_owners')
     .select('stripe_customer_id')
     .eq('email', user.email)
-    .single()
+  if (listingId) ownerQuery = ownerQuery.eq('listing_id', listingId)
+  const { data: owners } = await ownerQuery.limit(1)
+  const owner = owners?.[0] || null
 
   if (!owner?.stripe_customer_id) {
     return NextResponse.json({ error: 'No billing account found' }, { status: 404 })

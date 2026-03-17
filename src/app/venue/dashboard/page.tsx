@@ -185,11 +185,12 @@ export default function DashboardOverview() {
   const [showAllCompetitors, setShowAllCompetitors] = useState(false)
 
   useEffect(() => {
-    fetch('/api/venue/insights')
+    if (!listing) return
+    fetch(`/api/venue/insights?listing_id=${listing.id}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.bestDay) setBestDay(data.bestDay) })
       .catch(() => {})
-  }, [])
+  }, [listing])
 
   useEffect(() => {
     if (!listing) return
@@ -225,33 +226,45 @@ export default function DashboardOverview() {
   }, [justUpgraded, refresh])
 
   useEffect(() => {
-    if (!owner?.gbp_connected_at) return
-    fetch('/api/gbp/insights')
+    if (!owner?.gbp_connected_at || !listing) return
+    fetch(`/api/gbp/insights?listing_id=${listing.id}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.searches != null) setGbpSearches(data.searches) })
       .catch(() => {})
-  }, [owner?.gbp_connected_at])
+  }, [owner?.gbp_connected_at, listing])
+
+  // Reset data when venue changes
+  useEffect(() => {
+    setGoogleReview(null)
+    setPlaytomicData(null)
+    setWeather(null)
+    setCompetitors(null)
+    setShowAllCompetitors(false)
+    setBestDay(null)
+    setGbpSearches(null)
+  }, [listing?.id])
 
   // Fetch Google Reviews, Playtomic, Weather, Competitors
   useEffect(() => {
     if (!listing) return
 
-    fetch('/api/venue/google-reviews')
+    const lid = listing.id
+    fetch(`/api/venue/google-reviews?listing_id=${lid}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setGoogleReview(data) })
       .catch(() => {})
 
-    fetch('/api/venue/playtomic-public')
+    fetch(`/api/venue/playtomic-public?listing_id=${lid}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data && !data.noTenant) setPlaytomicData(data) })
       .catch(() => {})
 
-    fetch('/api/venue/weather')
+    fetch(`/api/venue/weather?listing_id=${lid}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.days) setWeather(data) })
       .catch(() => {})
 
-    fetch('/api/venue/competitors')
+    fetch(`/api/venue/competitors?listing_id=${lid}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setCompetitors(data) })
       .catch(() => {})

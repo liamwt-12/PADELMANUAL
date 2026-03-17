@@ -23,20 +23,38 @@ export type VenueOwner = {
   updated_at: string
 }
 
+export type VenueInfo = {
+  owner_id: string
+  listing_id: string
+  listing_name: string
+  listing_city: string | null
+  listing_slug: string
+  subscription_status: 'free' | 'premium' | 'trial'
+  view_count: number
+  click_count: number
+}
+
 type DashboardData = {
   user: User | null
   owner: VenueOwner | null
   listing: Listing | null
+  allVenues: VenueInfo[]
+  activeVenueId: string | null
+  setActiveVenueId: (id: string) => void
   isPremium: boolean
   isTrial: boolean
   loading: boolean
   refresh: () => Promise<void>
 }
 
+const STORAGE_KEY = 'pm_active_venue'
+
 function useVenueOwner(): DashboardData {
   const [user, setUser] = useState<User | null>(null)
   const [owner, setOwner] = useState<VenueOwner | null>(null)
   const [listing, setListing] = useState<Listing | null>(null)
+  const [allVenues, setAllVenues] = useState<VenueInfo[]>([])
+  const [activeVenueId, setActiveVenueIdState] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
@@ -49,25 +67,70 @@ function useVenueOwner(): DashboardData {
     }
     setUser(authUser)
 
-    const { data: ownerData } = await supabase
+    // Fetch ALL venue_owner rows for this email
+    const { data: ownerRows } = await supabase
       .from('venue_owners')
       .select('*')
       .eq('email', authUser.email!)
-      .single()
+      .order('created_at', { ascending: true })
 
-    if (ownerData) {
-      setOwner(ownerData as VenueOwner)
+    if (!ownerRows || ownerRows.length === 0) {
+      setLoading(false)
+      return
+    }
 
-      if (ownerData.listing_id) {
-        const { data: listingData } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('id', ownerData.listing_id)
-          .single()
+    // Fetch listing summaries for all owned venues
+    const listingIds = ownerRows
+      .map(o => o.listing_id)
+      .filter(Boolean) as string[]
 
-        if (listingData) {
-          setListing(listingData as Listing)
+    const { data: listingSummaries } = await supabase
+      .from('listings')
+      .select('id, name, city, slug, view_count, click_count')
+      .in('id', listingIds)
+
+    // Build allVenues array
+    const venues: VenueInfo[] = ownerRows
+      .filter(o => o.listing_id)
+      .map(o => {
+        const l = listingSummaries?.find(ls => ls.id === o.listing_id)
+        return {
+          owner_id: o.id,
+          listing_id: o.listing_id!,
+          listing_name: l?.name || 'Unknown venue',
+          listing_city: l?.city || null,
+          listing_slug: l?.slug || '',
+          subscription_status: o.subscription_status as VenueInfo['subscription_status'],
+          view_count: l?.view_count || 0,
+          click_count: l?.click_count || 0,
         }
+      })
+
+    setAllVenues(venues)
+
+    // Determine active venue from localStorage or default to first
+    let storedId: string | null = null
+    try { storedId = localStorage.getItem(STORAGE_KEY) } catch {}
+    const activeId = venues.find(v => v.listing_id === storedId)?.listing_id
+      || venues[0]?.listing_id
+      || null
+
+    setActiveVenueIdState(activeId)
+
+    // Set active owner
+    const activeOwner = ownerRows.find(o => o.listing_id === activeId) || ownerRows[0]
+    setOwner(activeOwner as VenueOwner)
+
+    // Fetch full listing for active venue
+    if (activeOwner?.listing_id) {
+      const { data: listingData } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', activeOwner.listing_id)
+        .single()
+
+      if (listingData) {
+        setListing(listingData as Listing)
       }
     }
 
@@ -80,11 +143,18 @@ function useVenueOwner(): DashboardData {
     await load()
   }, [load])
 
+  const setActiveVenueId = useCallback((id: string) => {
+    try { localStorage.setItem(STORAGE_KEY, id) } catch {}
+    setActiveVenueIdState(id)
+    setLoading(true)
+    load()
+  }, [load])
+
   const isPremium = owner?.subscription_status === 'premium'
   const isTrial = owner?.subscription_status === 'trial' &&
     (owner?.trial_ends_at ? new Date(owner.trial_ends_at) > new Date() : false)
 
-  return { user, owner, listing, isPremium, isTrial, loading, refresh }
+  return { user, owner, listing, allVenues, activeVenueId, setActiveVenueId, isPremium, isTrial, loading, refresh }
 }
 
 // Context provider — wraps the dashboard shell so all pages share one data fetch
