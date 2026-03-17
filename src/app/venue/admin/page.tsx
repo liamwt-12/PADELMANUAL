@@ -13,7 +13,7 @@ export default async function AdminPage() {
   const adminCookie = cookieStore.get('admin_secret')?.value
 
   if (adminCookie !== process.env.ADMIN_SECRET) {
-    redirect('/')
+    redirect('/venue/admin/login')
   }
 
   const supabase = createClient(

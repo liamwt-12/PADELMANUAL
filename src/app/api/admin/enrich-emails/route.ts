@@ -120,12 +120,25 @@ function sleep(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/** Sanitise a string so it survives JSON.stringify (strip control chars, lone surrogates) */
+function safeString(raw: string): string {
+  try {
+    // Strip C0/C1 control characters
+    const cleaned = raw.replace(/[\x00-\x1f\x7f\x80-\x9f]/g, '')
+    // Verify it survives JSON.stringify (catches lone surrogates etc)
+    JSON.stringify(cleaned)
+    return cleaned
+  } catch {
+    // Fallback: also strip all surrogate code units (removes emoji but keeps the response valid)
+    return raw.replace(/[\x00-\x1f\x7f-\x9f]/g, '').replace(/[\uD800-\uDFFF]/g, '')
+  }
+}
+
 /** Sanitise error values so they survive JSON.stringify */
 function safeError(err: unknown): string {
   try {
     const raw = err instanceof Error ? err.message : String(err)
-    // Strip control chars and truncate to avoid bloating the response
-    return raw.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 500)
+    return safeString(raw).slice(0, 500)
   } catch {
     return 'Unknown error'
   }
@@ -153,6 +166,8 @@ export async function POST(request: NextRequest) {
   if (!PLACES_API_KEY) {
     return NextResponse.json({ error: 'GOOGLE_PLACES_API_KEY not configured' }, { status: 500 })
   }
+
+  try {
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -199,9 +214,10 @@ export async function POST(request: NextRequest) {
   const newWebsiteListings: { id: string; name: string; website_url: string }[] = []
 
   for (const listing of listings) {
+    const safeName = safeString(listing.name || '')
     const entry: LogEntry = {
       id: listing.id,
-      name: listing.name,
+      name: safeName,
       step: 'places',
       place_id_found: false,
       website_found: false,
@@ -269,6 +285,7 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (err) {
+      console.error(`[enrich-emails] Venue failed id=${listing.id} name=${JSON.stringify(listing.name)}:`, err)
       const msg = safeError(err)
       errorCount++
 
@@ -297,9 +314,10 @@ export async function POST(request: NextRequest) {
 
   if (scrapeable && scrapeable.length > 0) {
     for (const listing of scrapeable) {
+      const safeName = safeString(listing.name || '')
       const entry: LogEntry = {
         id: listing.id,
-        name: listing.name,
+        name: safeName,
         step: 'scrape',
         place_id_found: false,
         website_found: false,
@@ -318,6 +336,7 @@ export async function POST(request: NextRequest) {
           emailFoundCount++
         }
       } catch (err) {
+        console.error(`[enrich-emails] Scrape failed id=${listing.id} name=${JSON.stringify(listing.name)}:`, err)
         entry.error = safeError(err)
         errorCount++
       }
@@ -343,6 +362,7 @@ export async function POST(request: NextRequest) {
       log,
     })
   } catch (jsonErr) {
+    console.error('[enrich-emails] JSON serialisation failed for log:', jsonErr)
     // If serialisation still fails, return summary without the full log
     return NextResponse.json({
       processed: listings.length,
@@ -356,7 +376,19 @@ export async function POST(request: NextRequest) {
       email_found: emailFoundCount,
       errors: errorCount,
       log_error: `Log serialisation failed: ${safeError(jsonErr)}`,
-      log: log.map(e => ({ ...e, error: e.error ? e.error.slice(0, 200) : undefined })),
+      log: log.map(e => ({
+        ...e,
+        name: safeString(e.name || ''),
+        error: e.error ? safeString(e.error).slice(0, 200) : undefined,
+      })),
     })
+  }
+
+  } catch (outerErr) {
+    console.error('[enrich-emails] Unexpected route error:', outerErr)
+    return NextResponse.json(
+      { error: `Unexpected error: ${safeError(outerErr)}` },
+      { status: 500 },
+    )
   }
 }
