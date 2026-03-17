@@ -245,83 +245,80 @@ export async function POST(request: NextRequest) {
     { auth: { persistSession: false } },
   )
 
-  // Pagination
+  // Params
   const limit = Math.min(Math.max(parseInt(request.nextUrl.searchParams.get('limit') || '50') || 50, 1), 200)
   const offset = Math.max(parseInt(request.nextUrl.searchParams.get('offset') || '0') || 0, 0)
+  const dryRun = request.nextUrl.searchParams.get('dry_run') === 'true'
+  const singleId = request.nextUrl.searchParams.get('single_id')
 
-  console.log(`[enrich-emails] Starting batch offset=${offset} limit=${limit}`)
+  console.log(`[enrich-emails] Starting offset=${offset} limit=${limit} dry_run=${dryRun} single_id=${singleId || 'none'}`)
 
-  // Minimal select — avoids columns with potentially broken data
-  const LISTING_FIELDS = 'id, name, city, google_place_id, website_url, phone, email'
+  // ── Single-ID mode: process one listing by UUID ──
+  if (singleId) {
+    const { data: row, error: rowErr } = await supabase
+      .from('listings')
+      .select('id, name, city, google_place_id, website_url, phone, email')
+      .eq('id', singleId)
+      .single()
 
-  // Fetch count separately (doesn't touch row data, so won't break)
-  const { count } = await supabase
-    .from('listings')
-    .select('id', { count: 'exact', head: true })
-    .is('email', null)
-    .or('permanently_closed.is.null,permanently_closed.eq.false')
-
-  const totalRemaining = count || 0
-
-  // Fetch the batch
-  const { data: allListings, error } = await supabase
-    .from('listings')
-    .select(LISTING_FIELDS)
-    .is('email', null)
-    .or('permanently_closed.is.null,permanently_closed.eq.false')
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1)
-
-  if (error) {
-    console.error(`[enrich-emails] Batch query failed at offset=${offset}:`, JSON.stringify(error))
-
-    // ── Fallback: fetch one row at a time to find the bad record ──
-    console.log(`[enrich-emails] Falling back to row-by-row fetch starting at offset=${offset}`)
-    const badRows: { offset: number; id?: string; name?: string; error: string }[] = []
-    const goodRows: Record<string, unknown>[] = []
-
-    for (let i = 0; i < limit; i++) {
-      const rowOffset = offset + i
-      const { data: singleRow, error: rowErr } = await supabase
-        .from('listings')
-        .select(LISTING_FIELDS)
-        .is('email', null)
-        .or('permanently_closed.is.null,permanently_closed.eq.false')
-        .order('created_at', { ascending: false })
-        .range(rowOffset, rowOffset)
-
-      if (rowErr) {
-        console.error(`[enrich-emails] *** BAD ROW at offset=${rowOffset}:`, JSON.stringify(rowErr))
-        badRows.push({
-          offset: rowOffset,
-          error: safeString(rowErr.message || JSON.stringify(rowErr)).slice(0, 300),
-        })
-      } else if (singleRow && singleRow.length > 0) {
-        const row = singleRow[0]
-        console.log(`[enrich-emails]   OK offset=${rowOffset} id=${row.id} name="${safeString(String(row.name || ''))}"`)
-        goodRows.push(row)
-      } else {
-        console.log(`[enrich-emails]   Empty at offset=${rowOffset}, end of results`)
-        break
-      }
+    if (rowErr || !row) {
+      return jsonResponse({ error: 'Listing not found', details: rowErr }, 404)
     }
 
-    return jsonResponse({
-      error: 'Batch query failed — fell back to row-by-row',
-      batch_error: {
-        code: safeString(error.code || ''),
-        message: safeString(error.message || ''),
-        details: safeString(error.details || ''),
-        hint: safeString(error.hint || ''),
-      },
-      offset,
-      limit,
-      total_remaining: totalRemaining,
-      bad_rows: badRows,
-      good_row_count: goodRows.length,
-      // If we found bad rows, skip them and process the good ones
-      skipped_bad_rows: badRows.length,
-    })
+    if (dryRun) {
+      return jsonResponse({ mode: 'single_dry_run', listing: row })
+    }
+
+    // Process this single listing through the normal enrichment
+    // (falls through to the main loop below with listings = [row])
+  }
+
+  // Minimal select — only the fields we need
+  const LISTING_FIELDS = 'id, name, city, google_place_id, website_url, phone, email'
+
+  let allListings: Record<string, unknown>[] | null = null
+  let totalRemaining = 0
+
+  if (singleId) {
+    // Already fetched above — refetch cleanly into the batch format
+    const { data } = await supabase
+      .from('listings')
+      .select(LISTING_FIELDS)
+      .eq('id', singleId)
+    allListings = data
+    totalRemaining = 1
+  } else {
+    // Count (head-only, no row data)
+    const { count } = await supabase
+      .from('listings')
+      .select('id', { count: 'exact', head: true })
+      .is('email', null)
+
+    totalRemaining = count || 0
+
+    // Fetch batch — simplified filter (no permanently_closed which may have bad data)
+    const { data, error } = await supabase
+      .from('listings')
+      .select(LISTING_FIELDS)
+      .is('email', null)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (error) {
+      console.error(`[enrich-emails] Batch query failed at offset=${offset}:`, JSON.stringify(error))
+      return jsonResponse({
+        error: 'Supabase query failed',
+        supabase_code: safeString(error.code || ''),
+        supabase_message: safeString(error.message || ''),
+        supabase_details: safeString(error.details || ''),
+        supabase_hint: safeString(error.hint || ''),
+        offset,
+        limit,
+        total_remaining: totalRemaining,
+      }, 500)
+    }
+
+    allListings = data
   }
 
   if (!allListings || allListings.length === 0) {
@@ -330,6 +327,26 @@ export async function POST(request: NextRequest) {
 
   // Sanitise every field from Supabase upfront
   const listings = allListings.map(row => sanitiseListing(row as Record<string, unknown>))
+
+  // ── Dry run: return what would be processed ──
+  if (dryRun) {
+    return jsonResponse({
+      mode: 'dry_run',
+      offset,
+      limit,
+      total_remaining: totalRemaining,
+      would_process: listings.length,
+      listings: listings.map(l => ({
+        id: l.id,
+        name: l.name,
+        city: l.city,
+        has_place_id: !!l.google_place_id,
+        has_website: !!l.website_url,
+        has_phone: !!l.phone,
+        has_email: !!l.email,
+      })),
+    })
+  }
 
   console.log(`[enrich-emails] Fetched ${listings.length} listings, total_remaining=${totalRemaining}`)
 

@@ -70,6 +70,15 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  // Email coverage stats
+  const { count: totalListings } = await supabase
+    .from('listings')
+    .select('id', { count: 'exact', head: true })
+  const { count: withEmail } = await supabase
+    .from('listings')
+    .select('id', { count: 'exact', head: true })
+    .not('email', 'is', null)
+
   return (
     <main className="py-8 pb-20">
       <AdminDashboard
@@ -84,6 +93,7 @@ export default async function AdminPage() {
           listing_name: r.listing_id ? reportListingMap[r.listing_id]?.name || null : null,
           listing_slug: r.listing_id ? reportListingMap[r.listing_id]?.slug || null : null,
         }))}
+        emailStats={{ total: totalListings || 0, withEmail: withEmail || 0 }}
       />
     </main>
   )

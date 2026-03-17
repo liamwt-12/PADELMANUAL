@@ -67,11 +67,13 @@ export default function AdminDashboard({
   outreachLog,
   submissions,
   reports,
+  emailStats,
 }: {
   owners: Owner[]
   outreachLog: OutreachEntry[]
   submissions: Submission[]
   reports: Report[]
+  emailStats: { total: number; withEmail: number }
 }) {
   const [triggeringFeatured, setTriggeringFeatured] = useState(false)
   const [actionResult, setActionResult] = useState('')
@@ -502,6 +504,97 @@ export default function AdminDashboard({
           </div>
         )}
       </section>
+
+      {/* Email Enrichment */}
+      <EnrichmentSection emailStats={emailStats} />
     </div>
+  )
+}
+
+function EnrichmentSection({ emailStats }: { emailStats: { total: number; withEmail: number } }) {
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<Record<string, unknown> | null>(null)
+  const [enrichOffset, setEnrichOffset] = useState(0)
+  const [enrichLimit, setEnrichLimit] = useState(50)
+
+  const pct = emailStats.total > 0
+    ? Math.round((emailStats.withEmail / emailStats.total) * 100)
+    : 0
+
+  async function runEnrich(dryRun: boolean) {
+    setRunning(true)
+    setResult(null)
+    try {
+      const res = await fetch(
+        `/api/admin/enrich-emails?offset=${enrichOffset}&limit=${enrichLimit}${dryRun ? '&dry_run=true' : ''}`,
+        {
+          method: 'POST',
+          headers: { 'x-admin-secret': document.cookie.match(/admin_secret=([^;]+)/)?.[1] || '' },
+        },
+      )
+      const data = await res.json()
+      setResult(data)
+    } catch (err) {
+      setResult({ error: String(err) })
+    }
+    setRunning(false)
+  }
+
+  return (
+    <section className="mb-10">
+      <h2 className="font-serif text-xl tracking-tight text-pm-text mb-4">
+        Email Enrichment
+      </h2>
+
+      <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-5 mb-4">
+        <p className="text-sm text-pm-text">
+          <strong>{emailStats.withEmail}</strong> of {emailStats.total} venues have emails ({pct}%)
+        </p>
+        <div className="mt-2 h-1.5 bg-pm-border/40 rounded-full overflow-hidden">
+          <div className="h-full bg-pm-accent rounded-full" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div>
+          <label className="text-[10px] text-pm-faint block mb-1">Offset</label>
+          <input
+            type="number"
+            value={enrichOffset}
+            onChange={e => setEnrichOffset(Number(e.target.value))}
+            className="w-20 px-2 py-1.5 text-sm border border-pm-border rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] text-pm-faint block mb-1">Limit</label>
+          <input
+            type="number"
+            value={enrichLimit}
+            onChange={e => setEnrichLimit(Number(e.target.value))}
+            className="w-20 px-2 py-1.5 text-sm border border-pm-border rounded-lg"
+          />
+        </div>
+        <button
+          onClick={() => runEnrich(false)}
+          disabled={running}
+          className="rounded-full bg-pm-accent text-white px-5 py-2 text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {running ? 'Running...' : 'Run enrichment'}
+        </button>
+        <button
+          onClick={() => runEnrich(true)}
+          disabled={running}
+          className="rounded-full border border-pm-border text-pm-muted px-5 py-2 text-xs font-medium hover:text-pm-text transition-colors disabled:opacity-50"
+        >
+          Dry run
+        </button>
+      </div>
+
+      {result && (
+        <pre className="rounded-xl border border-pm-border bg-white p-4 text-xs text-pm-text overflow-x-auto max-h-80 overflow-y-auto whitespace-pre-wrap">
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      )}
+    </section>
   )
 }
