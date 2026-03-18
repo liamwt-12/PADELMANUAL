@@ -50,6 +50,9 @@ export async function GET() {
     { url: '/guides/padel-cost-uk', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-rules', priority: '0.8', freq: 'monthly' },
     { url: '/guides/what-to-wear', priority: '0.7', freq: 'monthly' },
+    { url: '/guides/padel-near-me', priority: '0.8', freq: 'monthly' },
+    { url: '/guides/padel-rules-beginners', priority: '0.8', freq: 'monthly' },
+    { url: '/guides/padel-vs-pickleball', priority: '0.7', freq: 'monthly' },
     // News & pricing
     { url: '/padel-news/openings-closures', priority: '0.8', freq: 'weekly' },
     { url: '/padel-costs', priority: '0.8', freq: 'weekly' },
@@ -93,6 +96,17 @@ export async function GET() {
 
   for (const area of postcodeAreas) {
     xml += `  <url><loc>${BASE}/courts/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+    xml += `  <url><loc>${BASE}/padel/area/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  }
+
+  // Also add numbered postcode variants (SW1, SW2, etc.) from listings
+  const numberedAreas = [...new Set(
+    (postcodeData || [])
+      .map(p => p.postcode?.match(/^[A-Z]{1,2}\d{1,2}/i)?.[0]?.toLowerCase())
+      .filter(Boolean)
+  )];
+  for (const na of numberedAreas) {
+    xml += `  <url><loc>${BASE}/padel/area/${na}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
   }
 
   // Filter pages (indoor/outdoor × top cities)
