@@ -11,6 +11,7 @@ import LeadCaptureForm from "@/components/LeadCaptureForm";
 import ReportListingModal from "@/components/ReportListingModal";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import { nearestStation } from "@/lib/stations";
+import { nearestUKStation } from "@/lib/uk-stations";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -93,6 +94,7 @@ export default async function ListingPage({ params }: Props) {
   const lat = listing.lat ?? null;
   const lng = listing.lng ?? null;
   const closestStation = (city === 'London' && lat && lng) ? nearestStation(lat, lng) : null;
+  const closestTrainStation = (lat && lng) ? nearestUKStation(lat, lng) : null;
 
   return (
     <main className="pb-10">
@@ -263,12 +265,19 @@ export default async function ListingPage({ params }: Props) {
         </section>
       )}
 
-      {/* ── Nearest station link (London only) ── */}
-      {closestStation && (
-        <div className="mt-6 text-center">
-          <a href={`/padel/near/${closestStation.slug}`} className="text-xs text-pm-accent hover:text-pm-text transition-colors">
-            More padel courts near {closestStation.name} station →
-          </a>
+      {/* ── Nearest station links ── */}
+      {(closestStation || closestTrainStation) && (
+        <div className="mt-6 flex flex-wrap justify-center gap-4">
+          {closestStation && (
+            <a href={`/padel/near/${closestStation.slug}`} className="text-xs text-pm-accent hover:text-pm-text transition-colors">
+              Padel near {closestStation.name} tube →
+            </a>
+          )}
+          {closestTrainStation && (
+            <a href={`/padel/station/${closestTrainStation.slug}`} className="text-xs text-pm-accent hover:text-pm-text transition-colors">
+              Padel near {closestTrainStation.name} station →
+            </a>
+          )}
         </div>
       )}
 

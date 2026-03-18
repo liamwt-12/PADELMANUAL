@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import { STATIONS } from '@/lib/stations';
+import { UK_STATIONS } from '@/lib/uk-stations';
 
 const BASE = 'https://www.padelmanual.com';
 
@@ -119,6 +120,12 @@ export async function GET() {
   // Tube station pages
   for (const station of STATIONS) {
     xml += `  <url><loc>${BASE}/padel/near/${station.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  }
+
+  // UK train station pages
+  xml += `  <url><loc>${BASE}/padel/station</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  for (const station of UK_STATIONS) {
+    xml += `  <url><loc>${BASE}/padel/station/${station.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
   }
 
   // Gear product pages
