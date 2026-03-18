@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 
 const navLinks = [
   { label: "Find Courts", href: "/find" },
+  { label: "Play Today", href: "/play-today", accent: true },
   { label: "Gear", href: "/gear" },
   { label: "Shop", href: "/gear/shop" },
   { label: "Quiz", href: "/quiz" },
@@ -47,8 +48,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-[13px] font-medium text-pm-muted hover:text-pm-text transition-colors"
+                  className={`text-[13px] font-medium transition-colors ${
+                    link.accent
+                      ? 'text-pm-text hover:text-pm-accent flex items-center gap-1.5'
+                      : 'text-pm-muted hover:text-pm-text'
+                  }`}
                 >
+                  {link.accent && <span className="w-1.5 h-1.5 rounded-full bg-pm-accent" />}
                   {link.label}
                 </a>
               ))}

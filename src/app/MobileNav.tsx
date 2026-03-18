@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 const links = [
+  { label: "Play Today", href: "/play-today", accent: true },
   { label: "Find Courts", href: "/find" },
   { label: "Gear Guides", href: "/gear" },
   { label: "Shop", href: "/gear/shop" },
@@ -38,8 +39,13 @@ export default function MobileNav() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className="block py-2.5 text-sm font-medium text-pm-muted hover:text-pm-text transition-colors"
+                className={`block py-2.5 text-sm font-medium transition-colors ${
+                  link.accent
+                    ? 'text-pm-text flex items-center gap-2'
+                    : 'text-pm-muted hover:text-pm-text'
+                }`}
               >
+                {link.accent && <span className="w-1.5 h-1.5 rounded-full bg-pm-accent" />}
                 {link.label}
               </a>
             ))}

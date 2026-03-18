@@ -64,6 +64,23 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── Play Today CTA ── */}
+      <section className="mb-10 rounded-2xl border border-emerald-200/60 bg-emerald-50/30 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <div>
+            <p className="font-serif text-lg font-semibold tracking-tight text-pm-text">Want to play today?</p>
+            <p className="text-sm text-pm-muted mt-0.5">See which courts have slots available right now.</p>
+          </div>
+        </div>
+        <a
+          href="/play-today"
+          className="rounded-full bg-pm-accent text-white px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 text-center"
+        >
+          Find available courts →
+        </a>
+      </section>
+
       {/* ── Top Cities ── */}
       <section className="rounded-2xl border border-pm-border/60 bg-pm-bg-card p-8 md:p-10">
         <div className="label-caps">Popular cities</div>
