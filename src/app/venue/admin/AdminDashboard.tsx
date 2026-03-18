@@ -75,12 +75,24 @@ function StatusDot({ status }: { status: string }) {
   return <span className={`inline-block w-1.5 h-1.5 rounded-full ${color}`} />
 }
 
+type ReviewEntry = {
+  id: string
+  listing_id: string
+  listing_name: string | null
+  reviewer_name: string
+  rating: number
+  review_text: string
+  approved: boolean
+  created_at: string
+}
+
 export default function AdminDashboard({
   owners,
   outreachLog,
   submissions,
   reports,
   sequenceStats,
+  recentReviews,
   contentStats,
   emailStats,
 }: {
@@ -89,6 +101,7 @@ export default function AdminDashboard({
   submissions: Submission[]
   reports: Report[]
   sequenceStats: SequenceStats
+  recentReviews: ReviewEntry[]
   contentStats: { total: number; withDescription: number }
   emailStats: { total: number; withEmail: number }
 }) {
@@ -358,6 +371,39 @@ export default function AdminDashboard({
           ))}
         </div>
       </section>
+
+      {/* Recent Reviews */}
+      {recentReviews.length > 0 && (
+        <section className="mb-10">
+          <h2 className="font-serif text-xl tracking-tight text-pm-text mb-4">
+            Reviews ({recentReviews.length})
+          </h2>
+          <div className="rounded-2xl border border-pm-border bg-pm-bg-card divide-y divide-pm-border/40">
+            {recentReviews.map(review => (
+              <div key={review.id} className="px-5 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-serif text-lg font-bold text-pm-text">{review.rating}</span>
+                      <span className="text-[10px] text-pm-faint">/5</span>
+                      <span className="text-sm font-medium text-pm-text truncate">
+                        {review.listing_name || 'Unknown venue'}
+                      </span>
+                      {!review.approved && (
+                        <span className="text-[10px] bg-red-50 text-red-600 rounded-full px-2 py-0.5">Hidden</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-pm-muted mt-1 line-clamp-2">&ldquo;{review.review_text}&rdquo;</p>
+                    <p className="text-[10px] text-pm-faint mt-1">
+                      {review.reviewer_name} · {new Date(review.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Venue Submissions */}
       <section className="mb-10">

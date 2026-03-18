@@ -226,6 +226,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
     ...(isMultiVenue ? [{ label: 'All Venues', href: '/venue/dashboard/venues', icon: IconAllVenues }] : []),
     { label: 'Your Listing', href: '/venue/dashboard/listing', icon: IconListing },
     { label: 'Leads', href: '/venue/dashboard/leads', icon: IconLeads },
+    { label: 'Reviews', href: '/venue/dashboard/reviews', icon: IconLeads },
     { label: 'Settings', href: '/venue/dashboard/settings', icon: IconSettings },
   ]
 

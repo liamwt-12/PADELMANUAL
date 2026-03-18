@@ -70,6 +70,23 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  // Fetch recent reviews
+  const { data: recentReviews } = await supabase
+    .from('venue_reviews')
+    .select('id, listing_id, reviewer_name, rating, review_text, approved, created_at')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  // Get listing names for reviews
+  const reviewListingIds = (recentReviews || []).map(r => r.listing_id).filter(Boolean)
+  const { data: reviewListings } = reviewListingIds.length > 0
+    ? await supabase.from('listings').select('id, name').in('id', reviewListingIds)
+    : { data: [] }
+  const reviewListingMap: Record<string, string> = {}
+  for (const l of reviewListings || []) {
+    reviewListingMap[l.id] = l.name
+  }
+
   // Sequence stats
   const { count: totalInSequence } = await supabase
     .from('outreach_log')
@@ -168,6 +185,10 @@ export default async function AdminPage() {
           claimed: claimedDuringSequence || 0,
           optedOut: optedOutCount || 0,
         }}
+        recentReviews={(recentReviews || []).map(r => ({
+          ...r,
+          listing_name: r.listing_id ? reviewListingMap[r.listing_id] || null : null,
+        }))}
         contentStats={{ total: totalVenues || 0, withDescription: withDescription || 0 }}
         emailStats={{ total: totalListings || 0, withEmail: withEmail || 0 }}
       />
