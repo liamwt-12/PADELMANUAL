@@ -3,6 +3,7 @@ import { gearItems } from "@/lib/gear";
 import { getSupabase } from "@/lib/supabase";
 import HomeSearch from "./HomeSearch";
 import GearShowcase from "./GearShowcase";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 export const revalidate = 3600;
 
@@ -198,21 +199,8 @@ export default async function Home() {
       </section>
 
       {/* ── Newsletter ── */}
-      <section className="mt-16 rounded-3xl bg-pm-text p-10 md:p-14">
-        <div className="label-caps !text-pm-accent">The Weekly Note</div>
-        <h3 className="mt-4 max-w-md font-serif text-2xl font-semibold leading-tight text-pm-bg md:text-3xl">
-          One gear pick. One spotlight.<br />One thing worth knowing.
-        </h3>
-        <p className="mt-4 max-w-md text-sm leading-relaxed text-pm-faint">
-          A short weekly email for UK padel players. Plain text. No noise. Just the good stuff.
-        </p>
-        <form action="https://buttondown.com/api/emails/embed-subscribe/padelmanual" method="post" target="popupwindow" className="mt-7 max-w-md">
-          <div className="flex gap-2">
-            <input type="email" name="email" placeholder="your@email.com" required className="flex-1 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-pm-accent/40" />
-            <button type="submit" className="rounded-full bg-pm-bg px-6 py-3 text-sm font-semibold text-pm-text hover:opacity-90 transition-opacity">Subscribe</button>
-          </div>
-        </form>
-        <p className="mt-3 text-[11px] text-white/20">Free. Unsubscribe anytime.</p>
+      <section className="mt-16">
+        <NewsletterSignup />
       </section>
     </main>
   );

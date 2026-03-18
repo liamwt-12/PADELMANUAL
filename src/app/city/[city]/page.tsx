@@ -1,6 +1,7 @@
 import { getSupabase } from '@/lib/supabase';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import NewsletterSignup from '@/components/NewsletterSignup';
 
 // City editorial intros — add more as you go
 const cityIntros: Record<string, string> = {
@@ -142,33 +143,8 @@ export default async function CityPage({ params }: Props) {
       </section>
 
       {/* Newsletter */}
-      <section className="mt-14 rounded-3xl bg-pm-text p-10">
-        <div className="label-caps !text-pm-accent">The Weekly Note</div>
-        <h3 className="mt-3 font-serif text-xl font-semibold text-pm-bg">
-          Stay in the loop on {cityName} padel
-        </h3>
-        <p className="mt-2 text-sm text-pm-faint max-w-md">
-          New venues, gear picks, and one thing worth knowing. Every week.
-        </p>
-        <form
-          action="https://buttondown.com/api/emails/embed-subscribe/padelmanual"
-          method="post"
-          target="popupwindow"
-          className="mt-5 max-w-sm"
-        >
-          <div className="flex gap-2">
-            <input
-              type="email"
-              name="email"
-              placeholder="your@email.com"
-              required
-              className="flex-1 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-pm-accent/40"
-            />
-            <button type="submit" className="rounded-full bg-pm-bg px-5 py-3 text-sm font-semibold text-pm-text hover:opacity-90 transition-opacity">
-              Subscribe
-            </button>
-          </div>
-        </form>
+      <section className="mt-14">
+        <NewsletterSignup />
       </section>
     </main>
   );

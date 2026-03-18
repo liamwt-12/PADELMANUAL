@@ -9,6 +9,7 @@ import GooglePlacesData from "@/components/GooglePlacesData";
 import ListingSchema from "@/components/ListingSchema";
 import LeadCaptureForm from "@/components/LeadCaptureForm";
 import ReportListingModal from "@/components/ReportListingModal";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -259,6 +260,11 @@ export default async function ListingPage({ params }: Props) {
           </div>
         </section>
       )}
+
+      {/* ── Newsletter ── */}
+      <section className="mt-10">
+        <NewsletterSignup />
+      </section>
 
       {/* ── Gear CTA ── */}
       <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4 text-center">
