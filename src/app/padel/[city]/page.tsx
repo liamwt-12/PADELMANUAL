@@ -141,16 +141,16 @@ export default async function PadelCityPage({ params }: Props) {
           </div>
         )}
         {indoorCount > 0 && (
-          <div className="rounded-xl border border-pm-border/40 bg-white px-4 py-3 text-center">
+          <a href={`/padel/${slug}/indoor`} className="rounded-xl border border-pm-border/40 bg-white px-4 py-3 text-center hover:border-pm-accent/40 transition-all">
             <div className="font-serif text-lg font-bold text-pm-text">{indoorCount}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Indoor</div>
-          </div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Indoor →</div>
+          </a>
         )}
         {outdoorCount > 0 && (
-          <div className="rounded-xl border border-pm-border/40 bg-white px-4 py-3 text-center">
+          <a href={`/padel/${slug}/outdoor`} className="rounded-xl border border-pm-border/40 bg-white px-4 py-3 text-center hover:border-pm-accent/40 transition-all">
             <div className="font-serif text-lg font-bold text-pm-text">{outdoorCount}</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Outdoor</div>
-          </div>
+            <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-0.5">Outdoor →</div>
+          </a>
         )}
       </div>
 

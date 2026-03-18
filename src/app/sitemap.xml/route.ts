@@ -95,6 +95,13 @@ export async function GET() {
     xml += `  <url><loc>${BASE}/courts/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
   }
 
+  // Filter pages (indoor/outdoor × top cities)
+  const filterCities = ['london', 'manchester', 'birmingham', 'bristol', 'leeds', 'edinburgh', 'glasgow', 'brighton', 'nottingham', 'liverpool'];
+  for (const fc of filterCities) {
+    xml += `  <url><loc>${BASE}/padel/${fc}/indoor</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+    xml += `  <url><loc>${BASE}/padel/${fc}/outdoor</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  }
+
   // Tube station pages
   for (const station of STATIONS) {
     xml += `  <url><loc>${BASE}/padel/near/${station.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
