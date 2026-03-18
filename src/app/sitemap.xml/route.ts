@@ -82,8 +82,13 @@ export async function GET() {
   }
 
   for (const city of cities) {
+    const citySlug = encodeURIComponent(city!.toLowerCase().replace(/\s+/g, '-'));
     xml += `  <url><loc>${BASE}/city/${encodeURIComponent(city!.toLowerCase())}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+    xml += `  <url><loc>${BASE}/padel/${citySlug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
   }
+
+  // Padel index page
+  xml += `  <url><loc>${BASE}/padel</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
 
   for (const area of postcodeAreas) {
     xml += `  <url><loc>${BASE}/courts/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
