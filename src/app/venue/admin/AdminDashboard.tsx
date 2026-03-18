@@ -81,6 +81,7 @@ export default function AdminDashboard({
   submissions,
   reports,
   sequenceStats,
+  contentStats,
   emailStats,
 }: {
   owners: Owner[]
@@ -88,6 +89,7 @@ export default function AdminDashboard({
   submissions: Submission[]
   reports: Report[]
   sequenceStats: SequenceStats
+  contentStats: { total: number; withDescription: number }
   emailStats: { total: number; withEmail: number }
 }) {
   const [triggeringFeatured, setTriggeringFeatured] = useState(false)
@@ -261,6 +263,14 @@ export default function AdminDashboard({
         >
           {triggeringFeatured ? 'Running...' : 'Trigger featured venue'}
         </button>
+        <a
+          href="/api/newsletter/preview"
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secondary text-xs inline-flex items-center"
+        >
+          Preview newsletter →
+        </a>
       </div>
 
       {actionResult && (
@@ -576,9 +586,89 @@ export default function AdminDashboard({
         )}
       </section>
 
+      {/* Content Enrichment */}
+      <ContentEnrichmentSection contentStats={contentStats} />
+
       {/* Email Enrichment */}
       <EnrichmentSection emailStats={emailStats} />
     </div>
+  )
+}
+
+function ContentEnrichmentSection({ contentStats }: { contentStats: { total: number; withDescription: number } }) {
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<Record<string, unknown> | null>(null)
+  const [contentLimit, setContentLimit] = useState(20)
+
+  const pct = contentStats.total > 0
+    ? Math.round((contentStats.withDescription / contentStats.total) * 100)
+    : 0
+
+  async function runContentEnrich(dryRun: boolean) {
+    setRunning(true)
+    setResult(null)
+    try {
+      const res = await fetch(
+        `/api/admin/enrich-content?limit=${contentLimit}${dryRun ? '&dry_run=true' : ''}`,
+        { method: 'POST' },
+      )
+      const data = await res.json()
+      setResult(data)
+    } catch (err) {
+      setResult({ error: String(err) })
+    }
+    setRunning(false)
+  }
+
+  return (
+    <section className="mb-10">
+      <h2 className="font-serif text-xl tracking-tight text-pm-text mb-4">
+        Content Enrichment
+      </h2>
+
+      <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-5 mb-4">
+        <p className="text-sm text-pm-text">
+          <strong>{contentStats.withDescription}</strong> of {contentStats.total} venues have descriptions ({pct}%)
+        </p>
+        <div className="mt-2 h-1.5 bg-pm-border/40 rounded-full overflow-hidden">
+          <div className="h-full bg-pm-accent rounded-full" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div>
+          <label className="text-[10px] text-pm-faint block mb-1">Batch size</label>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            value={contentLimit}
+            onChange={e => setContentLimit(Math.min(50, Math.max(1, Number(e.target.value))))}
+            className="w-20 px-2 py-1.5 text-sm border border-pm-border rounded-lg"
+          />
+        </div>
+        <button
+          onClick={() => runContentEnrich(false)}
+          disabled={running}
+          className="rounded-full bg-pm-accent text-white px-5 py-2 text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        >
+          {running ? 'Generating...' : `Generate descriptions (${contentLimit})`}
+        </button>
+        <button
+          onClick={() => runContentEnrich(true)}
+          disabled={running}
+          className="rounded-full border border-pm-border text-pm-muted px-5 py-2 text-xs font-medium hover:text-pm-text transition-colors disabled:opacity-50"
+        >
+          Dry run
+        </button>
+      </div>
+
+      {result && (
+        <pre className="rounded-xl border border-pm-border bg-white p-4 text-xs text-pm-text overflow-x-auto max-h-80 overflow-y-auto whitespace-pre-wrap">
+          {JSON.stringify(result, null, 2)}
+        </pre>
+      )}
+    </section>
   )
 }
 

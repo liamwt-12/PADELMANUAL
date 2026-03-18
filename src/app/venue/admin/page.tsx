@@ -123,6 +123,19 @@ export default async function AdminPage() {
     .from('outreach_optouts')
     .select('id', { count: 'exact', head: true })
 
+  // Content coverage stats
+  const { count: totalVenues } = await supabase
+    .from('listings')
+    .select('id', { count: 'exact', head: true })
+    .eq('listing_type', 'venue')
+    .or('permanently_closed.is.null,permanently_closed.eq.false')
+  const { count: withDescription } = await supabase
+    .from('listings')
+    .select('id', { count: 'exact', head: true })
+    .eq('listing_type', 'venue')
+    .or('permanently_closed.is.null,permanently_closed.eq.false')
+    .not('description', 'is', null)
+
   // Email coverage stats
   const { count: totalListings } = await supabase
     .from('listings')
@@ -155,6 +168,7 @@ export default async function AdminPage() {
           claimed: claimedDuringSequence || 0,
           optedOut: optedOutCount || 0,
         }}
+        contentStats={{ total: totalVenues || 0, withDescription: withDescription || 0 }}
         emailStats={{ total: totalListings || 0, withEmail: withEmail || 0 }}
       />
     </main>
