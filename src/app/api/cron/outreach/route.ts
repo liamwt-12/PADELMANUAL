@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: 'No eligible venues', eligible: 0, sent: 0 })
   }
 
-  // ── Filter out already-sent and recently manually-outreached ──
+  // ── Filter out already-sent, opted-out, and recently manually-outreached ──
   const venueIds = venues.map(v => v.id)
   const { data: alreadySent } = await supabase
     .from('outreach_log')
@@ -119,8 +119,17 @@ export async function GET(request: NextRequest) {
 
   const sentIds = new Set((alreadySent || []).map(r => r.listing_id))
 
+  // Check opt-outs
+  const venueEmails = venues.map(v => v.contact_email || v.email).filter(Boolean)
+  const { data: optouts } = venueEmails.length > 0
+    ? await supabase.from('outreach_optouts').select('email').in('email', venueEmails)
+    : { data: [] }
+  const optedOutEmails = new Set((optouts || []).map(r => r.email))
+
   const eligible = venues.filter(v => {
     if (sentIds.has(v.id)) return false
+    const email = v.contact_email || v.email
+    if (email && optedOutEmails.has(email)) return false
     if (v.manually_outreached_at) {
       const manualDate = new Date(v.manually_outreached_at).getTime()
       if (Date.now() - manualDate < 30 * 24 * 60 * 60 * 1000) return false
@@ -227,6 +236,12 @@ export async function GET(request: NextRequest) {
         status: res.ok ? 'sent' : 'failed',
         sent_at: res.ok ? new Date().toISOString() : null,
         notes: res.ok ? null : `HTTP ${res.status}`,
+        ...(res.ok ? {
+          sequence_step: 1,
+          next_email_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+          sequence_completed: false,
+          claimed: false,
+        } : {}),
       })
 
       if (res.ok) sent++

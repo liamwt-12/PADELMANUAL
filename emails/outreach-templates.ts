@@ -1,4 +1,5 @@
 const SITE_URL = 'https://www.padelmanual.com'
+const CLAIM_URL = (slug: string) => `${SITE_URL}/claim?venue=${slug}`
 
 export function outreachEmail({
   venueName,
@@ -30,6 +31,58 @@ Padel Manual
 padelmanual.com
 
 PS. If this isn't relevant to you, just reply and I'll remove you from future emails.`,
+  }
+}
+
+export function outreachStep2Email({ venueName, claimSlug }: { venueName: string; claimSlug: string }) {
+  return {
+    subject: `Re: ${venueName} on Padel Manual`,
+    text: `Hi,
+
+Quick one — I can see ${venueName} has a Google Business Profile. Once you claim your listing on Padel Manual you can connect it and see exactly how many players are searching for you on Google each month — searches, calls, directions, all in one place.
+
+Takes 2 minutes to set up:
+${CLAIM_URL(claimSlug)}
+
+—
+Liam
+Padel Manual
+padelmanual.com
+
+PS. If this isn't relevant to you, just reply and I'll remove you from future emails.`,
+  }
+}
+
+export function outreachStep3Email({ venueName }: { venueName: string }) {
+  return {
+    subject: `Re: ${venueName} on Padel Manual`,
+    text: `Hi,
+
+Just checking my last couple of emails landed okay — happy to answer anything about Padel Manual if useful.
+
+—
+Liam
+Padel Manual
+padelmanual.com
+
+PS. If this isn't relevant to you, just reply and I'll remove you from future emails.`,
+  }
+}
+
+export function outreachStep4Email({ venueName, claimSlug }: { venueName: string; claimSlug: string }) {
+  return {
+    subject: `Re: ${venueName} on Padel Manual`,
+    text: `Hi,
+
+Last one from me. ${venueName} stays listed on Padel Manual either way — players will keep finding you.
+
+If you ever want to claim it and see your Google data, it's here:
+${CLAIM_URL(claimSlug)}
+
+—
+Liam
+Padel Manual
+padelmanual.com`,
   }
 }
 

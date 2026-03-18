@@ -21,6 +21,19 @@ type OutreachEntry = {
   sent_at: string | null
   created_at: string
   notes: string | null
+  sequence_step: number | null
+  sequence_completed: boolean | null
+  claimed: boolean | null
+}
+
+type SequenceStats = {
+  totalInSequence: number
+  awaitingStep2: number
+  awaitingStep3: number
+  awaitingStep4: number
+  sequenceComplete: number
+  claimed: number
+  optedOut: number
 }
 
 type Submission = {
@@ -67,12 +80,14 @@ export default function AdminDashboard({
   outreachLog,
   submissions,
   reports,
+  sequenceStats,
   emailStats,
 }: {
   owners: Owner[]
   outreachLog: OutreachEntry[]
   submissions: Submission[]
   reports: Report[]
+  sequenceStats: SequenceStats
   emailStats: { total: number; withEmail: number }
 }) {
   const [triggeringFeatured, setTriggeringFeatured] = useState(false)
@@ -86,6 +101,7 @@ export default function AdminDashboard({
   const [outreachResults, setOutreachResults] = useState<{ id: string; name: string; city: string | null; email: string | null; manually_outreached_at: string | null }[]>([])
   const [outreachSearching, setOutreachSearching] = useState(false)
   const [outreachMarked, setOutreachMarked] = useState<Set<string>>(new Set())
+  const [optingOut, setOptingOut] = useState<Set<string>>(new Set())
 
   async function triggerFeaturedCron() {
     setTriggeringFeatured(true)
@@ -151,6 +167,20 @@ export default function AdminDashboard({
       setOutreachMarked(prev => new Set(prev).add(listingId))
     } catch {
       setActionResult('Failed to mark outreached')
+    }
+  }
+
+  async function markOptedOut(entryId: string, email: string, listingId: string | null) {
+    if (!confirm(`Mark ${email} as opted out? They will never receive outreach again.`)) return
+    setOptingOut(prev => new Set(prev).add(entryId))
+    try {
+      await fetch('/api/admin/outreach-optout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, listing_id: listingId, outreach_log_id: entryId }),
+      })
+    } catch {
+      setActionResult('Failed to opt out')
     }
   }
 
@@ -296,6 +326,27 @@ export default function AdminDashboard({
         {outreachSearch.length >= 2 && !outreachSearching && outreachResults.length === 0 && (
           <p className="mt-2 text-xs text-pm-faint">No venues found.</p>
         )}
+      </section>
+
+      {/* Sequence Stats */}
+      <section className="mb-10 rounded-2xl border border-pm-border bg-pm-bg-card p-6">
+        <h2 className="font-serif text-xl tracking-tight text-pm-text mb-4">Sequence Stats</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'In sequence', value: sequenceStats.totalInSequence },
+            { label: 'Awaiting step 2', value: sequenceStats.awaitingStep2 },
+            { label: 'Awaiting step 3', value: sequenceStats.awaitingStep3 },
+            { label: 'Awaiting step 4', value: sequenceStats.awaitingStep4 },
+            { label: 'Sequence complete', value: sequenceStats.sequenceComplete },
+            { label: 'Claimed', value: sequenceStats.claimed },
+            { label: 'Opted out', value: sequenceStats.optedOut },
+          ].map(s => (
+            <div key={s.label}>
+              <p className="font-serif text-2xl font-bold text-pm-text">{s.value}</p>
+              <p className="text-[10px] text-pm-faint">{s.label}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Venue Submissions */}
@@ -486,18 +537,38 @@ export default function AdminDashboard({
                     <span className="text-[10px] text-pm-faint bg-pm-bg-hover rounded-full px-2 py-0.5">
                       {entry.type}
                     </span>
+                    {entry.type === 'outreach' && entry.sequence_step != null && (
+                      <span className="text-[10px] text-pm-muted bg-pm-bg-hover rounded-full px-2 py-0.5">
+                        step {entry.sequence_step}/4
+                        {entry.claimed && ' · claimed'}
+                        {entry.sequence_completed && !entry.claimed && ' · done'}
+                      </span>
+                    )}
                   </div>
                   {entry.notes && (
                     <p className="text-[10px] text-pm-faint mt-0.5 truncate">{entry.notes}</p>
                   )}
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[10px] text-pm-faint">
-                    {new Date(entry.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric', month: 'short',
-                    })}
-                  </p>
-                  <p className="text-[10px] capitalize text-pm-faint">{entry.status}</p>
+                <div className="flex items-center gap-3 shrink-0">
+                  {entry.type === 'outreach' && entry.email && !entry.claimed && !optingOut.has(entry.id) && (
+                    <button
+                      onClick={() => markOptedOut(entry.id, entry.email!, entry.listing_id)}
+                      className="text-[10px] font-medium text-red-500 hover:underline whitespace-nowrap"
+                    >
+                      Opt out
+                    </button>
+                  )}
+                  {optingOut.has(entry.id) && (
+                    <span className="text-[10px] font-medium text-red-400">Opted out</span>
+                  )}
+                  <div className="text-right">
+                    <p className="text-[10px] text-pm-faint">
+                      {new Date(entry.created_at).toLocaleDateString('en-GB', {
+                        day: 'numeric', month: 'short',
+                      })}
+                    </p>
+                    <p className="text-[10px] capitalize text-pm-faint">{entry.status}</p>
+                  </div>
                 </div>
               </div>
             ))}

@@ -70,6 +70,59 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
 
+  // Sequence stats
+  const { count: totalInSequence } = await supabase
+    .from('outreach_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'outreach')
+    .eq('status', 'sent')
+    .eq('sequence_completed', false)
+    .eq('claimed', false)
+
+  const { count: awaitingStep2 } = await supabase
+    .from('outreach_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'outreach')
+    .eq('status', 'sent')
+    .eq('sequence_step', 1)
+    .eq('sequence_completed', false)
+    .eq('claimed', false)
+
+  const { count: awaitingStep3 } = await supabase
+    .from('outreach_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'outreach')
+    .eq('status', 'sent')
+    .eq('sequence_step', 2)
+    .eq('sequence_completed', false)
+    .eq('claimed', false)
+
+  const { count: awaitingStep4 } = await supabase
+    .from('outreach_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'outreach')
+    .eq('status', 'sent')
+    .eq('sequence_step', 3)
+    .eq('sequence_completed', false)
+    .eq('claimed', false)
+
+  const { count: sequenceComplete } = await supabase
+    .from('outreach_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'outreach')
+    .eq('sequence_completed', true)
+    .eq('claimed', false)
+
+  const { count: claimedDuringSequence } = await supabase
+    .from('outreach_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'outreach')
+    .eq('claimed', true)
+
+  const { count: optedOutCount } = await supabase
+    .from('outreach_optouts')
+    .select('id', { count: 'exact', head: true })
+
   // Email coverage stats
   const { count: totalListings } = await supabase
     .from('listings')
@@ -93,6 +146,15 @@ export default async function AdminPage() {
           listing_name: r.listing_id ? reportListingMap[r.listing_id]?.name || null : null,
           listing_slug: r.listing_id ? reportListingMap[r.listing_id]?.slug || null : null,
         }))}
+        sequenceStats={{
+          totalInSequence: totalInSequence || 0,
+          awaitingStep2: awaitingStep2 || 0,
+          awaitingStep3: awaitingStep3 || 0,
+          awaitingStep4: awaitingStep4 || 0,
+          sequenceComplete: sequenceComplete || 0,
+          claimed: claimedDuringSequence || 0,
+          optedOut: optedOutCount || 0,
+        }}
         emailStats={{ total: totalListings || 0, withEmail: withEmail || 0 }}
       />
     </main>
