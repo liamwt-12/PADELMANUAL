@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase';
+import { STATIONS } from '@/lib/stations';
 
 const BASE = 'https://www.padelmanual.com';
 
@@ -92,6 +93,11 @@ export async function GET() {
 
   for (const area of postcodeAreas) {
     xml += `  <url><loc>${BASE}/courts/${area!.toLowerCase()}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>\n`;
+  }
+
+  // Tube station pages
+  for (const station of STATIONS) {
+    xml += `  <url><loc>${BASE}/padel/near/${station.slug}</loc><lastmod>${now}</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
   }
 
   // Gear product pages
