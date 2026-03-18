@@ -54,6 +54,10 @@ export async function GET() {
     { url: '/guides/padel-near-me', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-rules-beginners', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-vs-pickleball', priority: '0.7', freq: 'monthly' },
+    // Play Today
+    { url: '/play-today', priority: '0.9', freq: 'daily' },
+    ...['london', 'manchester', 'birmingham', 'bristol', 'leeds', 'edinburgh', 'glasgow', 'brighton', 'nottingham', 'liverpool']
+      .map(c => ({ url: `/play-today/${c}`, priority: '0.8', freq: 'daily' })),
     // News & pricing
     { url: '/padel-news/openings-closures', priority: '0.8', freq: 'weekly' },
     { url: '/padel-costs', priority: '0.8', freq: 'weekly' },

@@ -183,6 +183,8 @@ export default function DashboardOverview() {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [competitors, setCompetitors] = useState<CompetitorData | null>(null)
   const [showAllCompetitors, setShowAllCompetitors] = useState(false)
+  const [playTodayClicks, setPlayTodayClicks] = useState<number>(0)
+  const [playTodayThisMonth, setPlayTodayThisMonth] = useState<number>(0)
 
   useEffect(() => {
     if (!listing) return
@@ -216,6 +218,23 @@ export default function DashboardOverview() {
       .eq('listing_id', listing.id)
       .eq('contacted', false)
       .then(({ count }) => setUnreadCount(count || 0))
+
+    // Play Today booking clicks
+    supabase
+      .from('play_today_clicks')
+      .select('*', { count: 'exact', head: true })
+      .eq('listing_id', listing.id)
+      .then(({ count }) => setPlayTodayClicks(count || 0))
+
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+    supabase
+      .from('play_today_clicks')
+      .select('*', { count: 'exact', head: true })
+      .eq('listing_id', listing.id)
+      .gte('clicked_at', monthStart.toISOString())
+      .then(({ count }) => setPlayTodayThisMonth(count || 0))
   }, [listing])
 
   useEffect(() => {
@@ -375,6 +394,31 @@ export default function DashboardOverview() {
           </p>
         )}
       </Section>
+
+      {/* ── 2b. PLAY TODAY ACTIVITY ── */}
+      {playTodayClicks > 0 && (
+        <Section label="Court Activity">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="font-serif text-6xl tracking-tight text-pm-text">
+                {playTodayThisMonth.toLocaleString()}
+              </p>
+              <p className="label-caps text-pm-faint mt-2">Booking Attempts</p>
+              <p className="text-xs text-pm-faint mt-1">This month via Play Today</p>
+            </div>
+            <div>
+              <p className="font-serif text-6xl tracking-tight text-pm-text">
+                {playTodayClicks.toLocaleString()}
+              </p>
+              <p className="label-caps text-pm-faint mt-2">All Time</p>
+              <p className="text-xs text-pm-faint mt-1">Total booking clicks</p>
+            </div>
+          </div>
+          <p className="mt-6 text-sm text-pm-muted leading-relaxed">
+            Players found your venue on Padel Manual&apos;s Play Today page and clicked to book a court.
+          </p>
+        </Section>
+      )}
 
       {/* ── 3. PLAYER LEADS ── */}
       <Section label="Player Leads">
