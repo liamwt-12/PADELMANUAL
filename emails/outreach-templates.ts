@@ -86,6 +86,39 @@ padelmanual.com`,
   }
 }
 
+export function welcomeEmail({ name, venueName, venueSlug, magicLink }: { name: string; venueName: string; venueSlug: string; magicLink: string | null }) {
+  const dashboardLink = magicLink || `${SITE_URL}/venue/login`
+
+  return {
+    subject: `Welcome to Padel Manual — ${venueName} is yours`,
+    text: `Hi ${name},
+
+${venueName} is now claimed on Padel Manual. You're in control of how players see your venue.
+
+Here's what you can do from your dashboard:
+
+1. Update your listing — add photos, opening hours, announcements
+2. See who's finding you — views, clicks, and player enquiries
+3. Connect Google Business Profile — see how players search for you on Google
+4. Receive leads — players can contact you directly through your listing
+
+Sign in here:
+${dashboardLink}
+
+Your listing is live at:
+${SITE_URL}/${venueSlug}
+
+The free plan gives you full editing control. The premium dashboard (£29/mo) adds analytics, Google insights, and lead management — but there's no rush. Have a look around first.
+
+If you need anything, just reply to this email.
+
+—
+Liam
+Padel Manual
+padelmanual.com`,
+  }
+}
+
 export function featuredTrialEmail({
   venueName,
 }: {

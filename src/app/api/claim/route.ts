@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { welcomeEmail } from '@/../emails/outreach-templates';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     // 3. Create venue_owners row (one per email+listing pair)
+    let isNewClaim = false;
     if (listing) {
       // Check if this email already owns this specific listing
       const { data: existing } = await supabase
@@ -58,6 +60,7 @@ export async function POST(request: NextRequest) {
           .update({ name })
           .eq('id', existing[0].id)
       } else {
+        isNewClaim = true;
         const { error: ownerError } = await supabase
           .from('venue_owners')
           .insert({
@@ -125,36 +128,58 @@ export async function POST(request: NextRequest) {
         }),
       });
 
-      // Auto-reply with magic link (if generated) or login link
-      const dashboardSection = magicLink
-        ? `Sign in to your venue dashboard:\n\n${magicLink}\n\nThis link expires in 24 hours. You can always request a new one at:\n${siteUrl}/venue/login`
-        : `Sign in to your venue dashboard at:\n${siteUrl}/venue/login`;
+      // Send welcome email (new claims) or simple magic link (returning owners)
+      if (isNewClaim) {
+        const welcome = welcomeEmail({
+          name,
+          venueName: venue_name,
+          venueSlug: venue_slug,
+          magicLink,
+        });
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Liam at Padel Manual <hello@padelmanual.com>',
+            to: [email],
+            subject: welcome.subject,
+            text: welcome.text,
+          }),
+        });
+      } else {
+        const dashboardSection = magicLink
+          ? `Sign in to your venue dashboard:\n\n${magicLink}\n\nThis link expires in 24 hours. You can always request a new one at:\n${siteUrl}/venue/login`
+          : `Sign in to your venue dashboard at:\n${siteUrl}/venue/login`;
 
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Padel Manual <hello@padelmanual.com>',
-          to: [email],
-          subject: 'Your Padel Manual dashboard link',
-          text: [
-            `Hi ${name},`,
-            ``,
-            `Thanks for claiming ${venue_name} on Padel Manual.`,
-            ``,
-            dashboardSection,
-            ``,
-            `Your listing: https://www.padelmanual.com/${venue_slug}`,
-            ``,
-            `—`,
-            `Padel Manual`,
-            `padelmanual.com`,
-          ].join('\n'),
-        }),
-      });
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'Padel Manual <hello@padelmanual.com>',
+            to: [email],
+            subject: 'Your Padel Manual dashboard link',
+            text: [
+              `Hi ${name},`,
+              ``,
+              `Thanks for claiming ${venue_name} on Padel Manual.`,
+              ``,
+              dashboardSection,
+              ``,
+              `Your listing: https://www.padelmanual.com/${venue_slug}`,
+              ``,
+              `—`,
+              `Padel Manual`,
+              `padelmanual.com`,
+            ].join('\n'),
+          }),
+        });
+      }
     }
 
     return NextResponse.json({ success: true });
