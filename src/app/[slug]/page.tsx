@@ -12,6 +12,8 @@ import ReportListingModal from "@/components/ReportListingModal";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import { nearestStation } from "@/lib/stations";
 import { nearestUKStation } from "@/lib/uk-stations";
+import VenueReviews from "@/components/VenueReviews";
+import { getSupabase } from "@/lib/supabase";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -95,6 +97,19 @@ export default async function ListingPage({ params }: Props) {
   const lng = listing.lng ?? null;
   const closestStation = (city === 'London' && lat && lng) ? nearestStation(lat, lng) : null;
   const closestTrainStation = (lat && lng) ? nearestUKStation(lat, lng) : null;
+
+  // Fetch reviews
+  const supabase = getSupabase();
+  const { data: reviewsData } = await supabase
+    .from('venue_reviews')
+    .select('id, reviewer_name, rating, review_text, owner_response, owner_responded_at, created_at')
+    .eq('listing_id', listing.id)
+    .eq('approved', true)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const reviewCount = (listing as Record<string, unknown>).review_count as number || 0;
+  const reviewAvg = Number((listing as Record<string, unknown>).review_avg) || 0;
 
   return (
     <main className="pb-10">
@@ -233,6 +248,54 @@ export default async function ListingPage({ params }: Props) {
           </section>
         ) : null
       })()}
+
+      {/* ── Player Reviews ── */}
+      {isVenue && (
+        <section className="mb-6">
+          <VenueReviews
+            listingId={listing.id}
+            listingName={listing.name}
+            initialReviews={reviewsData || []}
+            totalCount={reviewCount}
+            averageRating={reviewAvg}
+          />
+        </section>
+      )}
+
+      {/* ── Review Schema (JSON-LD) ── */}
+      {reviewCount > 0 && reviewAvg > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SportsActivityLocation",
+              "name": listing.name,
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": reviewAvg.toFixed(1),
+                "reviewCount": reviewCount,
+                "bestRating": "5",
+                "worstRating": "1",
+              },
+              ...(reviewsData && reviewsData.length > 0 ? {
+                "review": reviewsData.slice(0, 5).map(r => ({
+                  "@type": "Review",
+                  "author": { "@type": "Person", "name": r.reviewer_name },
+                  "datePublished": r.created_at.split('T')[0],
+                  "reviewBody": r.review_text,
+                  "reviewRating": {
+                    "@type": "Rating",
+                    "ratingValue": r.rating,
+                    "bestRating": "5",
+                    "worstRating": "1",
+                  },
+                })),
+              } : {}),
+            }),
+          }}
+        />
+      )}
 
       {/* ── Lead Capture (all venues) ── */}
       {isVenue && (
