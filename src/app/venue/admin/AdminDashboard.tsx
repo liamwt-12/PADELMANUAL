@@ -269,6 +269,19 @@ export default function AdminDashboard({
           >
             {demoSending ? 'Sending...' : 'Send demo access \u2192'}
           </button>
+          <button
+            onClick={async () => {
+              await fetch('/api/admin/impersonate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: 'demo@manualpadel.com' }),
+              })
+              window.location.href = '/venue/dashboard'
+            }}
+            className="rounded-full border border-pm-accent/40 text-pm-accent px-5 py-2.5 text-sm font-medium hover:bg-pm-accent/[0.06] transition-colors whitespace-nowrap"
+          >
+            View dashboard &rarr;
+          </button>
         </div>
         {demoResult && (
           <p className={`mt-2 text-xs ${demoResult.startsWith('Sent') ? 'text-emerald-600' : 'text-red-500'}`}>
