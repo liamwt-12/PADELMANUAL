@@ -105,6 +105,9 @@ export default function AdminDashboard({
   contentStats: { total: number; withDescription: number }
   emailStats: { total: number; withEmail: number }
 }) {
+  const [demoEmail, setDemoEmail] = useState('')
+  const [demoSending, setDemoSending] = useState(false)
+  const [demoResult, setDemoResult] = useState('')
   const [triggeringFeatured, setTriggeringFeatured] = useState(false)
   const [actionResult, setActionResult] = useState('')
   const [outreachEligible, setOutreachEligible] = useState<number | null>(null)
@@ -212,10 +215,67 @@ export default function AdminDashboard({
     }
   }
 
+  async function sendDemoAccess() {
+    if (!demoEmail.includes('@')) return
+    setDemoSending(true)
+    setDemoResult('')
+    try {
+      const res = await fetch('/api/admin/send-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: demoEmail }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDemoResult(`Sent to ${demoEmail}`)
+        setDemoEmail('')
+      } else {
+        setDemoResult(data.error || 'Failed')
+      }
+    } catch {
+      setDemoResult('Failed to send')
+    }
+    setDemoSending(false)
+  }
+
   return (
     <div>
       <h1 className="font-serif text-3xl tracking-tight text-pm-text mb-2">Admin</h1>
       <p className="text-sm text-pm-faint mb-8">Internal dashboard for Padel Manual.</p>
+
+      {/* Demo Venue */}
+      <section className="mb-10 rounded-2xl border border-pm-accent/20 bg-pm-accent/[0.03] p-6">
+        <p className="label-caps mb-3">Demo Venue</p>
+        <div className="flex items-baseline justify-between gap-4 mb-1">
+          <h2 className="font-serif text-xl tracking-tight text-pm-text">Manual Padel &mdash; Battersea</h2>
+          <span className="text-[10px] text-pm-faint">All features enabled &middot; Premium</span>
+        </div>
+        <p className="text-xs text-pm-muted mb-4">
+          Send someone a link to explore the full dashboard as a demo.
+        </p>
+        <div className="flex items-center gap-2">
+          <input
+            type="email"
+            value={demoEmail}
+            onChange={e => setDemoEmail(e.target.value)}
+            placeholder="their@email.com"
+            className="flex-1 max-w-xs px-4 py-2.5 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent"
+            onKeyDown={e => e.key === 'Enter' && sendDemoAccess()}
+          />
+          <button
+            onClick={sendDemoAccess}
+            disabled={demoSending || !demoEmail.includes('@')}
+            className="rounded-full bg-pm-accent text-white px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+          >
+            {demoSending ? 'Sending...' : 'Send demo access \u2192'}
+          </button>
+        </div>
+        {demoResult && (
+          <p className={`mt-2 text-xs ${demoResult.startsWith('Sent') ? 'text-emerald-600' : 'text-red-500'}`}>
+            {demoResult}
+          </p>
+        )}
+      </section>
 
       {/* Outreach Trigger */}
       <section className="mb-10 rounded-2xl border border-pm-border bg-pm-bg-card p-6">

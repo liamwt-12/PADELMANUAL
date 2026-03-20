@@ -13,6 +13,7 @@ import NewsletterSignup from "@/components/NewsletterSignup";
 import { nearestStation } from "@/lib/stations";
 import { nearestUKStation } from "@/lib/uk-stations";
 import VenueReviews from "@/components/VenueReviews";
+import ListingImageGallery from "@/components/ListingImageGallery";
 import { getSupabase } from "@/lib/supabase";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -22,10 +23,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const listing = await getListingBySlug(slug);
   if (!listing) return {};
   const city = listing.city || listing.area || "UK";
-  return {
+  const meta: Metadata = {
     title: `${listing.name} — Padel in ${city} | Book & Play`,
     description: listing.short_blurb || listing.description?.slice(0, 160) || `${listing.name} — find courts, see live availability, read reviews, and book padel in ${city}.`,
   };
+  if (listing.hero_image_url) {
+    meta.openGraph = { images: [{ url: listing.hero_image_url }] };
+  }
+  return meta;
 }
 
 function LinkPill({ label, href, primary }: { label: string; href: string; primary?: boolean }) {
@@ -177,12 +182,16 @@ export default async function ListingPage({ params }: Props) {
         </section>
       )}
 
-      {/* ── Google Places: Photos, Rating, Reviews ── */}
-      {city && (
+      {/* ── Photos: listing images first, then Google Places fallback ── */}
+      {listing.images && listing.images.length > 0 ? (
+        <section className="mb-6">
+          <ListingImageGallery images={listing.images} venueName={listing.name} />
+        </section>
+      ) : city ? (
         <section className="mb-6">
           <GooglePlacesData venueName={listing.name} city={city} />
         </section>
-      )}
+      ) : null}
 
       {/* ── Stats Pills ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
