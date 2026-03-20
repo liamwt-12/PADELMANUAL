@@ -20,6 +20,18 @@
     {
       "path": "/api/cron/outreach-sequence",
       "schedule": "30 9 * * 1-5"
+    },
+    {
+      "path": "/api/cron/generate-briefs",
+      "schedule": "0 7 * * 1"
+    },
+    {
+      "path": "/api/cron/check-notifications",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/generate-gbp-posts",
+      "schedule": "0 10 * * 4"
     }
   ]
 }
