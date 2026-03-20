@@ -208,21 +208,21 @@ async function gatherData(
   // Daily stats this week vs last (from listing_stats_daily)
   const { data: statsThisWeek } = await supabase
     .from('listing_stats_daily')
-    .select('views, booking_clicks')
+    .select('views, clicks')
     .eq('listing_id', listingId)
     .gte('date', weekAgo.toISOString().split('T')[0])
 
   const { data: statsLastWeek } = await supabase
     .from('listing_stats_daily')
-    .select('views, booking_clicks')
+    .select('views, clicks')
     .eq('listing_id', listingId)
     .gte('date', twoWeeksAgo.toISOString().split('T')[0])
     .lt('date', weekAgo.toISOString().split('T')[0])
 
   const viewsThisWeek = statsThisWeek?.reduce((s: number, r: Record<string, number>) => s + (r.views || 0), 0) || 0
   const viewsLastWeek = statsLastWeek?.reduce((s: number, r: Record<string, number>) => s + (r.views || 0), 0) || 0
-  const clicksThisWeek = statsThisWeek?.reduce((s: number, r: Record<string, number>) => s + (r.booking_clicks || 0), 0) || 0
-  const clicksLastWeek = statsLastWeek?.reduce((s: number, r: Record<string, number>) => s + (r.booking_clicks || 0), 0) || 0
+  const clicksThisWeek = statsThisWeek?.reduce((s: number, r: Record<string, number>) => s + (r.clicks || 0), 0) || 0
+  const clicksLastWeek = statsLastWeek?.reduce((s: number, r: Record<string, number>) => s + (r.clicks || 0), 0) || 0
 
   // Use cumulative counts as fallback if no daily stats yet
   const finalViewsThisWeek = viewsThisWeek || (listing?.view_count ?? 0)
