@@ -271,11 +271,22 @@ export default function AdminDashboard({
           </button>
           <button
             onClick={async () => {
-              await fetch('/api/admin/impersonate', {
+              const res = await fetch('/api/admin/impersonate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: 'demo@manualpadel.com' }),
               })
+              if (!res.ok) {
+                setDemoResult('Impersonation failed — check admin_secret cookie')
+                return
+              }
+              // Verify the data endpoint can find the owner row
+              const dataRes = await fetch('/api/admin/impersonate/data')
+              const data = await dataRes.json()
+              if (!data.owners || data.owners.length === 0) {
+                setDemoResult('No venue_owners row found for demo@manualpadel.com — re-run the seed SQL')
+                return
+              }
               window.location.href = '/venue/dashboard'
             }}
             className="rounded-full border border-pm-accent/40 text-pm-accent px-5 py-2.5 text-sm font-medium hover:bg-pm-accent/[0.06] transition-colors whitespace-nowrap"
