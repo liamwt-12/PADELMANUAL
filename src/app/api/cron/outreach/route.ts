@@ -208,6 +208,19 @@ export async function GET(request: NextRequest) {
       continue
     }
 
+    // Re-check opt-out for scraped emails not in the original set
+    if (!venueEmails.includes(email)) {
+      const { data: lateOptout } = await supabase
+        .from('outreach_optouts')
+        .select('email')
+        .eq('email', email)
+        .limit(1)
+      if (lateOptout && lateOptout.length > 0) {
+        skipped++
+        continue
+      }
+    }
+
     const template = outreachEmail({
       venueName: venue.name,
       viewCount: venue.view_count || 0,
