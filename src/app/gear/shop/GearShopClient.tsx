@@ -16,6 +16,7 @@ interface Product {
   shape: string | null;
   gender: string;
   featured: boolean;
+  source: string | null;
 }
 
 interface Props {
@@ -40,6 +41,7 @@ export default function GearShopClient({ products, brands, categories }: Props) 
   const [selectedCategory, setSelectedCategory] = useState('rackets');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedShape, setSelectedShape] = useState('');
+  const [selectedRetailer, setSelectedRetailer] = useState('');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'price-low' | 'price-high'>('name');
 
@@ -48,6 +50,7 @@ export default function GearShopClient({ products, brands, categories }: Props) 
   const filtered = useMemo(() => {
     let result = products.filter(p => p.category === selectedCategory);
 
+    if (selectedRetailer) result = result.filter(p => p.source === selectedRetailer);
     if (selectedBrand) result = result.filter(p => p.brand === selectedBrand);
     if (selectedShape) result = result.filter(p => p.shape === selectedShape);
     if (search) {
@@ -70,7 +73,7 @@ export default function GearShopClient({ products, brands, categories }: Props) 
     }
 
     return result;
-  }, [products, selectedCategory, selectedBrand, selectedShape, search, sortBy]);
+  }, [products, selectedCategory, selectedRetailer, selectedBrand, selectedShape, search, sortBy]);
 
   // Get brands for selected category
   const categoryBrands = useMemo(() => {
@@ -108,7 +111,7 @@ export default function GearShopClient({ products, brands, categories }: Props) 
         {sortedCategories.map(cat => (
           <button
             key={cat}
-            onClick={() => { setSelectedCategory(cat); setSelectedBrand(''); setSelectedShape(''); }}
+            onClick={() => { setSelectedCategory(cat); setSelectedBrand(''); setSelectedShape(''); setSelectedRetailer(''); }}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               selectedCategory === cat
                 ? 'bg-pm-text text-white'
@@ -136,6 +139,17 @@ export default function GearShopClient({ products, brands, categories }: Props) 
             className="w-full pl-9 pr-3 py-2 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent placeholder:text-pm-ash"
           />
         </div>
+
+        {/* Retailer filter */}
+        <select
+          value={selectedRetailer}
+          onChange={(e) => setSelectedRetailer(e.target.value)}
+          className="px-3 py-2 text-sm border border-pm-border rounded-xl bg-white text-pm-text focus:outline-none focus:border-pm-accent"
+        >
+          <option value="">All retailers</option>
+          <option value="express_padel">Express Padel</option>
+          <option value="decathlon">Decathlon</option>
+        </select>
 
         {/* Brand filter */}
         <select
@@ -187,7 +201,7 @@ export default function GearShopClient({ products, brands, categories }: Props) 
         <div className="text-center py-16">
           <p className="text-pm-muted text-sm">No products found</p>
           <button
-            onClick={() => { setSelectedBrand(''); setSelectedShape(''); setSearch(''); }}
+            onClick={() => { setSelectedRetailer(''); setSelectedBrand(''); setSelectedShape(''); setSearch(''); }}
             className="mt-2 text-xs text-pm-accent hover:underline"
           >
             Clear filters
@@ -245,7 +259,7 @@ export default function GearShopClient({ products, brands, categories }: Props) 
       {/* Affiliate disclosure */}
       <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4">
         <p className="text-xs leading-relaxed text-pm-faint">
-          Prices shown are from Padel Market and may vary. When you buy through links on this page,
+          Prices shown are from the retailer and may vary. When you buy through links on this page,
           Padel Manual earns a small affiliate commission at no extra cost to you.
           We only feature products from retailers we trust.
         </p>

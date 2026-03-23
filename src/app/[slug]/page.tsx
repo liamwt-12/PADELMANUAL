@@ -359,13 +359,21 @@ export default async function ListingPage({ params }: Props) {
       </section>
 
       {/* ── Gear CTA ── */}
-      <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4 text-center">
-        <p className="text-sm text-pm-muted">
-          Need gear?{" "}
-          <a href="/gear" className="text-pm-accent hover:text-pm-text transition-colors font-medium">
-            Shop padel gear →
+      <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-5">
+        <p className="text-sm text-pm-muted mb-3">Shop padel gear:</p>
+        <div className="flex flex-wrap gap-3">
+          <a href="/gear/shop" className="btn-secondary text-xs">
+            Express Padel →
           </a>
-        </p>
+          <a
+            href="https://www.awin1.com/cread.php?awinmid=26895&awinaffid=2799632&ued=https%3A%2F%2Fwww.decathlon.co.uk%2Fsports%2Fpadel"
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="btn-secondary text-xs"
+          >
+            Decathlon →
+          </a>
+        </div>
       </section>
 
       {/* ── Report issue ── */}

@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
-    const { product_id, product_slug } = await request.json()
+    const { product_id, product_slug, retailer } = await request.json()
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     await supabase.from('gear_clicks').insert({
       product_id: product_id || null,
       product_slug: product_slug || null,
+      retailer: retailer || 'express_padel',
     })
   } catch {
     // fire and forget — don't fail the user experience

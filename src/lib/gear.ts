@@ -2,12 +2,21 @@ import type { GearItem } from "./types";
 
 const AWIN_ID = "2799632";
 const AWIN_MID = "24562"; // Padel Market
+const DECATHLON_AWIN_MID = "26895";
 const AMAZON_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG || "padelmanual-21";
+
+export const DECATHLON_AFFILIATE_BASE = `https://www.awin1.com/cread.php?awinmid=${DECATHLON_AWIN_MID}&awinaffid=${AWIN_ID}&ued=`;
 
 function pm(path: string) {
   // Padel Market via Awin deep link
   const dest = encodeURIComponent(`https://padelmarket.com/en/${path}`);
   return `https://www.awin1.com/cread.php?awinmid=${AWIN_MID}&awinaffid=${AWIN_ID}&ued=${dest}`;
+}
+
+function dk(path: string) {
+  // Decathlon via Awin deep link
+  const dest = encodeURIComponent(`https://www.decathlon.co.uk/${path}`);
+  return `${DECATHLON_AFFILIATE_BASE}${dest}`;
 }
 
 function amzn(asin: string) {
@@ -28,6 +37,7 @@ export const gearItems: GearItem[] = [
         price: "~£75",
         url: pm("collections/rackets"),
         amazonUrl: amzn("B0D1WNXMCP"),
+        decathlonUrl: dk("sports/padel/padel-rackets"),
         verdict: "Lightweight graphene frame with power foam for centring wayward shots. An advanced racket at a mid-range price.",
         bestFor: "Intermediate to advanced players wanting control without weight",
       },
@@ -37,6 +47,7 @@ export const gearItems: GearItem[] = [
         price: "~£62",
         url: pm("collections/rackets"),
         amazonUrl: amzn("B0D1WLKM7P"),
+        decathlonUrl: dk("sports/padel/padel-rackets"),
         verdict: "Lightweight, well-balanced, fibreglass hitting surface for softer feel and more power. The best entry point from a premium brand.",
         bestFor: "Beginners who want a quality racket from day one",
       },
@@ -46,6 +57,7 @@ export const gearItems: GearItem[] = [
         price: "~£70",
         url: pm("collections/rackets"),
         amazonUrl: amzn("B0DCCGVR7Q"),
+        decathlonUrl: dk("sports/padel/padel-rackets"),
         verdict: "Larger round head increases the hitting surface. Fibreglass weave gives consistent feel. Wilson build quality throughout.",
         bestFor: "Beginners and improvers wanting forgiveness",
       },
@@ -55,6 +67,7 @@ export const gearItems: GearItem[] = [
         price: "~£150",
         url: pm("collections/rackets"),
         amazonUrl: amzn("B0CQ2DDNB2"),
+        decathlonUrl: dk("sports/padel/padel-rackets"),
         verdict: "Diamond shape for power players. Stiff frame rewards clean technique. Not forgiving, but devastating when you connect.",
         bestFor: "Aggressive players with solid fundamentals",
       },
@@ -64,6 +77,7 @@ export const gearItems: GearItem[] = [
         price: "~£200",
         url: pm("collections/rackets"),
         amazonUrl: amzn("B0CG9TZ8K1"),
+        decathlonUrl: dk("sports/padel/padel-rackets"),
         verdict: "Dual carbon fibre exoskeleton for rigidity and power. Special moulds improve spin feel. Top-tier engineering.",
         bestFor: "Advanced players wanting maximum control and spin",
       },
@@ -82,6 +96,7 @@ export const gearItems: GearItem[] = [
         price: "~£70",
         url: pm("collections/shoes"),
         amazonUrl: amzn("B0BKJZ5ZXK"),
+        decathlonUrl: dk("sports/padel/padel-shoes"),
         verdict: "Gel cushioning, herringbone sole pattern for excellent grip on artificial grass. Reliable all-rounder.",
         bestFor: "All-court players wanting comfort and grip",
       },
@@ -91,6 +106,7 @@ export const gearItems: GearItem[] = [
         price: "~£85",
         url: pm("collections/shoes"),
         amazonUrl: amzn("B0BYJ2S9HT"),
+        decathlonUrl: dk("sports/padel/padel-shoes"),
         verdict: "Designed specifically for padel. Superior lateral support, durable outsole, breathable upper.",
         bestFor: "Players who move a lot and need support",
       },
@@ -100,6 +116,7 @@ export const gearItems: GearItem[] = [
         price: "~£95",
         url: pm("collections/shoes"),
         amazonUrl: amzn("B0CJ5Y3RVF"),
+        decathlonUrl: dk("sports/padel/padel-shoes"),
         verdict: "Adiwear outsole for extreme durability. Adiprene cushioning in the forefoot. Premium feel.",
         bestFor: "Players who wear through shoes quickly",
       },
@@ -118,6 +135,7 @@ export const gearItems: GearItem[] = [
         price: "~£6 (3 balls)",
         url: pm("collections/balls"),
         amazonUrl: amzn("B07G3H9CQZ"),
+        decathlonUrl: dk("sports/padel/padel-balls"),
         verdict: "The most widely used padel ball in the world. Official ball of the World Padel Tour. Consistent bounce and excellent durability.",
         bestFor: "Everyone — the default choice for good reason",
       },
@@ -127,6 +145,7 @@ export const gearItems: GearItem[] = [
         price: "~£7 (3 balls)",
         url: pm("collections/balls"),
         amazonUrl: amzn("B0948LZQF5"),
+        decathlonUrl: dk("sports/padel/padel-balls"),
         verdict: "Plastomer core stays inflated 4x longer than standard balls. Comes in recyclable packaging.",
         bestFor: "Players wanting longer-lasting balls with less waste",
       },
@@ -136,6 +155,7 @@ export const gearItems: GearItem[] = [
         price: "~£6 (3 balls)",
         url: pm("collections/balls"),
         amazonUrl: amzn("B09NRCMQRT"),
+        decathlonUrl: dk("sports/padel/padel-balls"),
         verdict: "Excellent feel and consistent performance. Premium wool felt for durability.",
         bestFor: "Club players and competitive matches",
       },
@@ -154,6 +174,7 @@ export const gearItems: GearItem[] = [
         price: "~£35",
         url: pm("collections/bags"),
         amazonUrl: amzn("B0C9JXJHZ1"),
+        decathlonUrl: dk("sports/padel/padel-bags"),
         verdict: "Fits 2-3 rackets plus shoes, balls, and accessories. Padded compartment protects your rackets. Simple, effective.",
         bestFor: "Most players — the all-rounder bag",
       },
@@ -163,6 +184,7 @@ export const gearItems: GearItem[] = [
         price: "~£55",
         url: pm("collections/bags"),
         amazonUrl: amzn("B0D5MCQNK1"),
+        decathlonUrl: dk("sports/padel/padel-bags"),
         verdict: "Thermally insulated racket compartment. Shoe pocket. Multiple storage zones. Premium materials.",
         bestFor: "Players wanting extra protection and organisation",
       },
@@ -172,6 +194,7 @@ export const gearItems: GearItem[] = [
         price: "~£65",
         url: pm("collections/bags"),
         amazonUrl: amzn("B0BZ3Y4H8F"),
+        decathlonUrl: dk("sports/padel/padel-bags"),
         verdict: "Thermoguard compartment keeps rackets safe. Two large main compartments. Classic Wilson build quality.",
         bestFor: "Serious players carrying multiple rackets",
       },

@@ -1,9 +1,11 @@
-import { getGearBySlug, gearItems } from "@/lib/gear";
+import { getGearBySlug, gearItems, DECATHLON_AFFILIATE_BASE } from "@/lib/gear";
 import { getSupabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import BuyButton from "@/components/BuyButton";
+
+const DECATHLON_PADEL_URL = `${DECATHLON_AFFILIATE_BASE}${encodeURIComponent("https://www.decathlon.co.uk/sports/padel")}`;
 
 export const revalidate = 3600;
 
@@ -22,19 +24,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = getSupabase();
   const { data: product } = await supabase
     .from("gear_products")
-    .select("name, description, image, affiliate_url, price, brand")
+    .select("name, description, image, affiliate_url, price, brand, source")
     .eq("slug", slug)
     .single();
 
   if (!product) return {};
 
+  const retailer = product.source === 'decathlon' ? 'Decathlon' : 'Express Padel';
   const desc = product.description
     ? product.description.split(/[.\n]/)[0] + "."
-    : `Buy the ${product.name} from Express Padel.`;
+    : `Buy the ${product.name} from ${retailer}.`;
 
   return {
-    title: `${product.name} | Buy from Express Padel`,
-    description: `Buy the ${product.name} from Express Padel. ${desc} Free delivery available.`,
+    title: `${product.name} | Buy from ${retailer}`,
+    description: `Buy the ${product.name} from ${retailer}. ${desc} Free delivery available.`,
     openGraph: {
       images: product.image ? [{ url: product.image }] : undefined,
     },
@@ -110,13 +113,35 @@ export default async function GearPage({ params }: Props) {
             )}
           </div>
 
-          {/* Buy button */}
-          <div className="mt-6">
-            <BuyButton
-              affiliateUrl={product.affiliate_url}
-              productId={product.id}
-              productSlug={product.slug}
-            />
+          {/* Buy buttons */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {product.source === 'decathlon' ? (
+              <BuyButton
+                affiliateUrl={product.affiliate_url}
+                productId={product.id}
+                productSlug={product.slug}
+                label="Buy from Decathlon"
+                retailer="decathlon"
+              />
+            ) : (
+              <>
+                <BuyButton
+                  affiliateUrl={product.affiliate_url}
+                  productId={product.id}
+                  productSlug={product.slug}
+                />
+                {product.decathlon_url && (
+                  <BuyButton
+                    affiliateUrl={product.decathlon_url}
+                    productId={product.id}
+                    productSlug={product.slug}
+                    label="Buy from Decathlon"
+                    variant="secondary"
+                    retailer="decathlon"
+                  />
+                )}
+              </>
+            )}
           </div>
 
           {!product.in_stock && (
@@ -186,10 +211,28 @@ export default async function GearPage({ params }: Props) {
         </section>
       )}
 
+      {/* Find more gear */}
+      <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-5">
+        <div className="label-caps mb-3">Find more padel gear</div>
+        <div className="flex flex-wrap gap-3">
+          <a href="/gear/shop" className="btn-secondary text-xs">
+            Browse Express Padel →
+          </a>
+          <a
+            href={DECATHLON_PADEL_URL}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="btn-secondary text-xs"
+          >
+            Browse Decathlon →
+          </a>
+        </div>
+      </section>
+
       {/* Affiliate disclosure */}
-      <section className="mt-10 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4">
+      <section className="mt-4 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4">
         <p className="text-xs leading-relaxed text-pm-faint">
-          Price shown is from Express Padel and may vary. When you buy through this link,
+          Prices shown are from the retailer and may vary. When you buy through links on this page,
           Padel Manual earns a small affiliate commission at no extra cost to you.
         </p>
       </section>
@@ -248,14 +291,26 @@ function GuidePage({ gear, slug }: { gear: any; slug: string }) {
                 <h2 className="mt-2 font-serif text-xl font-semibold tracking-tight">{product.name}</h2>
                 <div className="mt-1 text-sm font-medium text-pm-accent">{product.price}</div>
               </div>
-              <a
-                href={product.url || product.amazonUrl}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="btn-primary whitespace-nowrap text-[13px]"
-              >
-                View on Padel Market
-              </a>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={product.url || product.amazonUrl}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="btn-primary whitespace-nowrap text-[13px]"
+                >
+                  View on Padel Market
+                </a>
+                {product.decathlonUrl && (
+                  <a
+                    href={product.decathlonUrl}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    className="btn-secondary whitespace-nowrap text-[13px]"
+                  >
+                    View on Decathlon
+                  </a>
+                )}
+              </div>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div>
@@ -291,8 +346,8 @@ function GuidePage({ gear, slug }: { gear: any; slug: string }) {
       <section className="mt-6 rounded-xl border border-pm-border/40 bg-pm-bg-card p-6">
         <p className="text-xs leading-relaxed text-pm-faint">
           Padel Manual is reader-supported. When you buy through links on this page, we earn a small
-          affiliate commission from Padel Market at no extra cost to you. We only recommend products
-          we would genuinely use ourselves.
+          affiliate commission from Padel Market and Decathlon at no extra cost to you. We only recommend
+          products we would genuinely use ourselves.
         </p>
       </section>
 

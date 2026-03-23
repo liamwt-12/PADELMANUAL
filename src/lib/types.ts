@@ -81,6 +81,7 @@ export type GearProduct = {
   price: string;
   url: string;        // generic URL (replaces amazonUrl)
   amazonUrl?: string;  // keep for backwards compat
+  decathlonUrl?: string;
   verdict: string;
   bestFor: string;
 };

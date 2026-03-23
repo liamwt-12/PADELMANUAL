@@ -1,11 +1,13 @@
-import { gearItems } from "@/lib/gear";
+import { gearItems, DECATHLON_AFFILIATE_BASE } from "@/lib/gear";
 import { getSupabase } from "@/lib/supabase";
 import type { Metadata } from "next";
 import ProductGrid from "@/components/ProductGrid";
 
+const DECATHLON_PADEL_URL = `${DECATHLON_AFFILIATE_BASE}${encodeURIComponent("https://www.decathlon.co.uk/sports/padel")}`;
+
 export const metadata: Metadata = {
   title: "Padel Gear — Rackets, Shoes, Bags & More",
-  description: "Everything you need to play padel. Browse 1,600+ products from Express Padel and Padel Market, plus expert gear guides.",
+  description: "Everything you need to play padel. Browse 1,600+ products from Express Padel, Decathlon, and Padel Market, plus expert gear guides.",
 };
 
 export const revalidate = 3600;
@@ -67,12 +69,20 @@ export default async function GearIndex() {
       <section className="pb-8 pt-6">
         <h1 className="font-serif text-4xl font-bold tracking-tight">Padel Gear</h1>
         <p className="mt-4 max-w-lg text-pm-muted">
-          Everything you need to play padel, sourced from Express Padel and Padel Market.
+          Everything you need to play padel, sourced from Express Padel, Decathlon, and Padel Market.
           {" "}{totalProducts.toLocaleString()} products across {Object.keys(counts).length} categories.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <a href="/gear/shop" className="btn-primary text-sm">
             Browse all products →
+          </a>
+          <a
+            href={DECATHLON_PADEL_URL}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="btn-secondary text-sm"
+          >
+            Shop Decathlon →
           </a>
           <a href="/quiz" className="btn-secondary text-sm">
             Take the racket quiz
@@ -129,6 +139,37 @@ export default async function GearIndex() {
               <div className="mt-4 text-xs font-medium text-pm-faint">Read guide →</div>
             </a>
           ))}
+        </div>
+      </section>
+
+      {/* Where to buy */}
+      <section className="mt-12">
+        <div className="label-caps mb-5 text-pm-accent">Where to buy</div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-pm-border/60 bg-pm-bg-card p-6 md:p-8">
+            <div className="font-serif text-lg font-semibold tracking-tight">Express Padel</div>
+            <p className="mt-2 text-sm text-pm-muted">
+              The UK&apos;s dedicated padel specialist. Wide range of rackets, shoes, bags, and accessories from top brands.
+            </p>
+            <a href="/gear/shop" className="mt-4 btn-primary inline-block text-sm">
+              Shop Express Padel →
+            </a>
+          </div>
+          <div className="rounded-2xl border border-pm-border/60 bg-pm-bg-card p-6 md:p-8">
+            <div className="font-serif text-lg font-semibold tracking-tight">Decathlon</div>
+            <p className="mt-2 text-sm text-pm-muted">
+              Europe&apos;s largest sports retailer. Great value padel gear from Kuikma, Head, Babolat, and more.
+              Free delivery and in-store pickup.
+            </p>
+            <a
+              href={DECATHLON_PADEL_URL}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="mt-4 btn-primary inline-block text-sm"
+            >
+              Shop Decathlon →
+            </a>
+          </div>
         </div>
       </section>
 

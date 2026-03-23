@@ -11,7 +11,7 @@ export const revalidate = 3600;
 
 export default async function GearShopPage() {
   const supabase = getSupabase();
-  const cols = 'id, name, slug, brand, category, price, compare_price, image, product_url, affiliate_url, shape, gender, featured';
+  const cols = 'id, name, slug, brand, category, price, compare_price, image, product_url, affiliate_url, shape, gender, featured, source';
   const [{ data: p1 }, { data: p2 }] = await Promise.all([
     supabase.from('gear_products').select(cols).order('category').order('name').range(0, 999),
     supabase.from('gear_products').select(cols).order('category').order('name').range(1000, 2999),

@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import ProductGrid from '@/components/ProductGrid';
+import RetailerFilter from '@/components/RetailerFilter';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -11,14 +12,25 @@ export const revalidate = 3600;
 
 const BRAND_FILTERS = ['All', 'Babolat', 'Head', 'Bullpadel', 'Wilson', 'Adidas', 'Dunlop', 'Nox', 'Siux'];
 
-export default async function RacketsPage() {
+export default async function RacketsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ retailer?: string }>;
+}) {
+  const { retailer } = await searchParams;
   const supabase = getSupabase();
-  const { data: products } = await supabase
+
+  let query = supabase
     .from('gear_products')
-    .select('id, name, slug, brand, price, compare_price, image, affiliate_url, shape')
+    .select('id, name, slug, brand, price, compare_price, image, affiliate_url, shape, source')
     .eq('category', 'rackets')
     .order('name');
 
+  if (retailer === 'express_padel' || retailer === 'decathlon') {
+    query = query.eq('source', retailer);
+  }
+
+  const { data: products } = await query;
   const allProducts = products || [];
   const brands = [...new Set(allProducts.map(p => p.brand).filter(Boolean))].sort();
 
@@ -29,6 +41,8 @@ export default async function RacketsPage() {
         <h1 className="mt-5 font-serif text-4xl font-bold tracking-tight">Padel Rackets</h1>
         <p className="mt-3 text-sm text-pm-muted">{allProducts.length} rackets from top brands</p>
       </section>
+
+      <RetailerFilter currentRetailer={retailer} basePath="/gear/rackets" />
 
       {/* Brand filter pills */}
       <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
@@ -47,7 +61,7 @@ export default async function RacketsPage() {
 
       <section className="mt-8 rounded-xl border border-pm-border/40 bg-pm-bg-card px-6 py-4">
         <p className="text-xs leading-relaxed text-pm-faint">
-          Prices from Express Padel and Padel Market. When you buy through links on this page,
+          Prices from Express Padel, Decathlon, and Padel Market. When you buy through links on this page,
           Padel Manual earns a small affiliate commission at no extra cost to you.
         </p>
       </section>
