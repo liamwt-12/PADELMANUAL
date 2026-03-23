@@ -35,12 +35,16 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: 'Rejected',
 }
 
+const DEMO_LISTING_ID = 'ffc9fc4d-fcc5-4fc6-97a1-c4f455d011ca'
+
 export default function GBPManagementPage() {
-  const { listing, owner, isPremium, isTrial } = useDashboard()
+  const { listing, owner, isPremium, isTrial, isImpersonating } = useDashboard()
   const [posts, setPosts] = useState<GBPPost[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [loadingPosts, setLoadingPosts] = useState(true)
   const [loadingReviews, setLoadingReviews] = useState(true)
+
+  const isDemo = listing?.id === DEMO_LISTING_ID
   const [editingPost, setEditingPost] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const [draftingReply, setDraftingReply] = useState<string | null>(null)
@@ -51,19 +55,30 @@ export default function GBPManagementPage() {
   const [descImproving, setDescImproving] = useState(false)
   const [suggestedDesc, setSuggestedDesc] = useState('')
 
-  const gbpConnected = !!owner?.gbp_connected_at
+  const gbpConnected = isDemo || !!owner?.gbp_connected_at
 
   useEffect(() => {
     if (!listing) return
+
+    if (isImpersonating) {
+      fetch('/api/admin/impersonate/data')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.gbpPosts) setPosts(data.gbpPosts)
+          if (data?.reviews) setReviews(data.reviews)
+          setLoadingPosts(false)
+          setLoadingReviews(false)
+        })
+        .catch(() => { setLoadingPosts(false); setLoadingReviews(false) })
+      return
+    }
+
     fetch(`/api/venue/gbp-posts?listing_id=${listing.id}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.posts) setPosts(data.posts) })
       .catch(() => {})
       .finally(() => setLoadingPosts(false))
-  }, [listing])
 
-  useEffect(() => {
-    if (!listing) return
     const supabase = createClient()
     supabase
       .from('venue_reviews')
@@ -76,7 +91,7 @@ export default function GBPManagementPage() {
         setReviews((data as Review[]) || [])
         setLoadingReviews(false)
       })
-  }, [listing])
+  }, [listing, isImpersonating])
 
   async function handlePostAction(postId: string, action: 'approve' | 'reject', text?: string) {
     const res = await fetch('/api/venue/gbp-posts', {
@@ -208,7 +223,37 @@ export default function GBPManagementPage() {
 
       {/* 1. Overview strip */}
       <section className="mb-10">
-        <GBPInsightsCard />
+        {isDemo ? (
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="flex items-center gap-1.5 text-[10px] text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Connected
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">3,841</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Searches</p>
+              </div>
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">612</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Directions</p>
+              </div>
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">234</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Calls</p>
+              </div>
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">634</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Website clicks</p>
+              </div>
+            </div>
+            <p className="text-[10px] text-pm-faint mt-6">Last 28 days</p>
+          </div>
+        ) : (
+          <GBPInsightsCard />
+        )}
       </section>
 
       {/* 2. Google Posts */}
@@ -314,13 +359,13 @@ export default function GBPManagementPage() {
           <div className="h-20 rounded-xl bg-pm-border/20 animate-pulse" />
         ) : (
           <>
-            {listing?.google_rating && (
+            {(listing?.google_rating || isDemo) && (
               <div className="flex items-baseline gap-3 mb-6">
                 <span className="font-serif text-3xl text-pm-text">
-                  <span className="text-pm-accent">&#9733;</span> {listing.google_rating}
+                  <span className="text-pm-accent">&#9733;</span> {isDemo ? 4.8 : listing?.google_rating}
                 </span>
                 <span className="text-sm text-pm-muted">
-                  &middot; {listing.google_review_count} reviews
+                  &middot; {isDemo ? 143 : listing?.google_review_count} reviews
                 </span>
               </div>
             )}

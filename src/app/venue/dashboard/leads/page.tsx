@@ -16,7 +16,7 @@ type Lead = {
 }
 
 export default function LeadsPage() {
-  const { listing, isPremium, isTrial } = useDashboard()
+  const { listing, isPremium, isTrial, isImpersonating } = useDashboard()
   const [leads, setLeads] = useState<Lead[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -26,6 +26,18 @@ export default function LeadsPage() {
 
   useEffect(() => {
     if (!listing) { setLoading(false); return }
+
+    if (isImpersonating) {
+      fetch('/api/admin/impersonate/data')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          setLeads((data?.leads as Lead[]) || [])
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+      return
+    }
+
     const supabase = createClient()
     supabase
       .from('listing_leads')
@@ -36,7 +48,7 @@ export default function LeadsPage() {
         setLeads((data as Lead[]) || [])
         setLoading(false)
       })
-  }, [listing])
+  }, [listing, isImpersonating])
 
   async function toggleContacted(leadId: string, current: boolean) {
     const supabase = createClient()

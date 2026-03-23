@@ -51,7 +51,7 @@ function pctDelta(current: number, previous: number): number | null {
 }
 
 export default function IntelligencePage() {
-  const { listing, isPremium, isTrial } = useDashboard()
+  const { listing, isPremium, isTrial, isImpersonating } = useDashboard()
   const [briefs, setBriefs] = useState<Brief[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedBrief, setExpandedBrief] = useState<string | null>(null)
@@ -59,6 +59,18 @@ export default function IntelligencePage() {
 
   useEffect(() => {
     if (!listing) return
+
+    if (isImpersonating) {
+      fetch('/api/admin/impersonate/data')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.briefs) setBriefs(data.briefs)
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+      return
+    }
+
     fetch(`/api/venue/briefs?listing_id=${listing.id}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -66,7 +78,7 @@ export default function IntelligencePage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [listing])
+  }, [listing, isImpersonating])
 
   useEffect(() => {
     if (!listing) return

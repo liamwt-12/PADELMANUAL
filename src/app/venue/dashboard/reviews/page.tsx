@@ -23,7 +23,7 @@ function formatDate(iso: string): string {
 }
 
 export default function DashboardReviews() {
-  const { listing, owner, isPremium, isTrial } = useDashboard()
+  const { listing, owner, isPremium, isTrial, isImpersonating } = useDashboard()
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
@@ -32,6 +32,18 @@ export default function DashboardReviews() {
 
   useEffect(() => {
     if (!listing) return
+
+    if (isImpersonating) {
+      fetch('/api/admin/impersonate/data')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          setReviews((data?.reviews as Review[]) || [])
+          setLoading(false)
+        })
+        .catch(() => setLoading(false))
+      return
+    }
+
     const supabase = createClient()
     supabase
       .from('venue_reviews')
@@ -43,7 +55,7 @@ export default function DashboardReviews() {
         setReviews((data as Review[]) || [])
         setLoading(false)
       })
-  }, [listing])
+  }, [listing, isImpersonating])
 
   async function submitReply(reviewId: string) {
     if (!replyText.trim() || !owner?.email) return

@@ -44,15 +44,43 @@ export async function GET(request: NextRequest) {
     activeListing = data
   }
 
-  // Fetch leads for the active listing so impersonation can display them
+  // Fetch data for the active listing so impersonation bypasses RLS
   let leads: unknown[] = []
+  let reviews: unknown[] = []
+  let briefs: unknown[] = []
+  let gbpPosts: unknown[] = []
+
   if (targetListingId) {
-    const { data: leadRows } = await supabase
-      .from('listing_leads')
-      .select('*')
-      .eq('listing_id', targetListingId)
-      .order('created_at', { ascending: false })
-    leads = leadRows || []
+    const [leadRes, reviewRes, briefRes, postRes] = await Promise.all([
+      supabase
+        .from('listing_leads')
+        .select('*')
+        .eq('listing_id', targetListingId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('venue_reviews')
+        .select('*')
+        .eq('listing_id', targetListingId)
+        .eq('approved', true)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('intelligence_briefs')
+        .select('*')
+        .eq('listing_id', targetListingId)
+        .order('week_start', { ascending: false })
+        .limit(5),
+      supabase
+        .from('gbp_posts_queue')
+        .select('*')
+        .eq('listing_id', targetListingId)
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ])
+
+    leads = leadRes.data || []
+    reviews = reviewRes.data || []
+    briefs = briefRes.data || []
+    gbpPosts = postRes.data || []
   }
 
   return NextResponse.json({
@@ -60,5 +88,8 @@ export async function GET(request: NextRequest) {
     listingSummaries: listingSummaries || [],
     activeListing,
     leads,
+    reviews,
+    briefs,
+    gbpPosts,
   })
 }
