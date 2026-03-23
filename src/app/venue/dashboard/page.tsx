@@ -164,10 +164,68 @@ function GBPConnectCard() {
   )
 }
 
+/* ── Demo listing ── */
+
+const DEMO_LISTING_ID = 'ffc9fc4d-fcc5-4fc6-97a1-c4f455d011ca'
+
+const DEMO_UTILISATION = [
+  { day: 'Mon', label: 'Mon', pct: 55 },
+  { day: 'Tue', label: 'Tue', pct: 58 },
+  { day: 'Wed', label: 'Wed', pct: 64 },
+  { day: 'Thu', label: 'Thu', pct: 62 },
+  { day: 'Fri', label: 'Fri', pct: 71 },
+  { day: 'Sat', label: 'Sat', pct: 84 },
+  { day: 'Sun', label: 'Sun', pct: 82 },
+]
+
+function DemoUtilisationCard() {
+  const avgPct = Math.round(DEMO_UTILISATION.reduce((s, d) => s + d.pct, 0) / DEMO_UTILISATION.length)
+  const weekendAvg = Math.round((DEMO_UTILISATION[5].pct + DEMO_UTILISATION[6].pct) / 2)
+  const weekdayAvg = Math.round(DEMO_UTILISATION.slice(0, 5).reduce((s, d) => s + d.pct, 0) / 5)
+
+  return (
+    <div className="rounded-2xl border border-pm-border bg-pm-bg-card p-8">
+      <div className="flex items-center justify-between mb-6">
+        <span className="text-[10px] text-pm-faint">This week</span>
+      </div>
+
+      <div className="sm:flex sm:items-end sm:gap-10">
+        <div className="mb-6 sm:mb-0 sm:shrink-0">
+          <p className="font-serif text-5xl font-bold tracking-tight text-pm-text">{avgPct}%</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Avg booked</p>
+          <p className="text-xs text-pm-muted mt-2">{weekendAvg}% weekend · {weekdayAvg}% weekday</p>
+        </div>
+
+        <div className="flex items-end gap-2 h-24 flex-1">
+          {DEMO_UTILISATION.map(d => (
+            <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
+              <div className="w-full bg-pm-bg-hover rounded overflow-hidden" style={{ height: '72px' }}>
+                <div
+                  className="w-full rounded"
+                  style={{
+                    height: `${d.pct}%`,
+                    marginTop: `${100 - d.pct}%`,
+                    backgroundColor: d.pct > 80 ? '#059669' : d.pct > 50 ? '#c4956a' : '#d6d3cd',
+                  }}
+                />
+              </div>
+              <span className="text-[9px] text-pm-faint font-medium">{d.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="mt-6 text-[10px] text-pm-faint">
+        Based on Playtomic availability · 6 courts
+      </p>
+    </div>
+  )
+}
+
 /* ── Overview page ── */
 
 export default function DashboardOverview() {
-  const { listing, owner, isPremium, isTrial, refresh } = useDashboard()
+  const { listing, owner, isPremium, isTrial, isImpersonating, refresh } = useDashboard()
   const searchParams = useSearchParams()
   const justUpgraded = searchParams.get('upgraded') === 'true'
   const justConnectedGBP = searchParams.get('gbp') === 'connected'
@@ -185,6 +243,12 @@ export default function DashboardOverview() {
   const [showAllCompetitors, setShowAllCompetitors] = useState(false)
   const [playTodayClicks, setPlayTodayClicks] = useState<number>(0)
   const [playTodayThisMonth, setPlayTodayThisMonth] = useState<number>(0)
+  const [monthlyViews, setMonthlyViews] = useState<number | null>(null)
+  const [monthlyClicks, setMonthlyClicks] = useState<number | null>(null)
+  const [prevMonthViews, setPrevMonthViews] = useState<number | null>(null)
+  const [prevMonthClicks, setPrevMonthClicks] = useState<number | null>(null)
+
+  const isDemo = listing?.id === DEMO_LISTING_ID
 
   useEffect(() => {
     if (!listing) return
@@ -194,8 +258,23 @@ export default function DashboardOverview() {
       .catch(() => {})
   }, [listing])
 
+  // Fetch leads — use impersonation API if impersonating (bypasses RLS)
   useEffect(() => {
     if (!listing) return
+
+    if (isImpersonating) {
+      fetch('/api/admin/impersonate/data')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          const allLeads = (data?.leads as Lead[]) || []
+          setLeads(allLeads.slice(0, 3))
+          setLeadCount(allLeads.length)
+          setUnreadCount(allLeads.filter((l: Lead) => !l.contacted).length)
+        })
+        .catch(() => {})
+      return
+    }
+
     const supabase = createClient()
 
     supabase
@@ -218,8 +297,13 @@ export default function DashboardOverview() {
       .eq('listing_id', listing.id)
       .eq('contacted', false)
       .then(({ count }) => setUnreadCount(count || 0))
+  }, [listing, isImpersonating])
 
-    // Play Today booking clicks
+  // Play Today booking clicks
+  useEffect(() => {
+    if (!listing) return
+    const supabase = createClient()
+
     supabase
       .from('play_today_clicks')
       .select('*', { count: 'exact', head: true })
@@ -235,6 +319,42 @@ export default function DashboardOverview() {
       .eq('listing_id', listing.id)
       .gte('clicked_at', monthStart.toISOString())
       .then(({ count }) => setPlayTodayThisMonth(count || 0))
+  }, [listing])
+
+  // Fetch monthly stats from listing_stats_daily
+  useEffect(() => {
+    if (!listing) return
+    const supabase = createClient()
+
+    const now = new Date()
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10)
+    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10)
+
+    supabase
+      .from('listing_stats_daily')
+      .select('views, clicks')
+      .eq('listing_id', listing.id)
+      .gte('date', thisMonthStart)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setMonthlyViews(data.reduce((s, r) => s + (r.views || 0), 0))
+          setMonthlyClicks(data.reduce((s, r) => s + (r.clicks || 0), 0))
+        }
+      })
+
+    supabase
+      .from('listing_stats_daily')
+      .select('views, clicks')
+      .eq('listing_id', listing.id)
+      .gte('date', prevMonthStart)
+      .lte('date', prevMonthEnd)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setPrevMonthViews(data.reduce((s, r) => s + (r.views || 0), 0))
+          setPrevMonthClicks(data.reduce((s, r) => s + (r.clicks || 0), 0))
+        }
+      })
   }, [listing])
 
   useEffect(() => {
@@ -365,11 +485,21 @@ export default function DashboardOverview() {
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="font-serif text-6xl tracking-tight text-pm-text">
-              {(listing?.view_count ?? 0).toLocaleString()}
+              {(monthlyViews ?? listing?.view_count ?? 0).toLocaleString()}
             </p>
             <p className="label-caps text-pm-faint mt-2">Listing Views</p>
-            <p className="text-xs text-pm-faint mt-1">All time</p>
-            {(listing?.view_count ?? 0) === 0 && isNewVenue && (
+            <p className="text-xs text-pm-faint mt-1">
+              {monthlyViews != null ? 'This month' : 'All time'}
+            </p>
+            {monthlyViews != null && prevMonthViews != null && prevMonthViews > 0 && (
+              <p className={`text-xs mt-1 font-medium ${
+                monthlyViews >= prevMonthViews ? 'text-emerald-600' : 'text-red-500'
+              }`}>
+                {monthlyViews >= prevMonthViews ? '↑' : '↓'}{' '}
+                {Math.abs(Math.round(((monthlyViews - prevMonthViews) / prevMonthViews) * 100))}% vs last month
+              </p>
+            )}
+            {(monthlyViews ?? listing?.view_count ?? 0) === 0 && isNewVenue && (
               <p className="text-xs text-pm-muted mt-2 leading-relaxed max-w-[200px]">
                 Your listing went live recently. Views will build as players discover you.
               </p>
@@ -377,11 +507,21 @@ export default function DashboardOverview() {
           </div>
           <div>
             <p className="font-serif text-6xl tracking-tight text-pm-text">
-              {(listing?.click_count ?? 0).toLocaleString()}
+              {(monthlyClicks ?? listing?.click_count ?? 0).toLocaleString()}
             </p>
             <p className="label-caps text-pm-faint mt-2">Booking Clicks</p>
-            <p className="text-xs text-pm-faint mt-1">All time</p>
-            {(listing?.click_count ?? 0) === 0 && isNewVenue && (
+            <p className="text-xs text-pm-faint mt-1">
+              {monthlyClicks != null ? 'This month' : 'All time'}
+            </p>
+            {monthlyClicks != null && prevMonthClicks != null && prevMonthClicks > 0 && (
+              <p className={`text-xs mt-1 font-medium ${
+                monthlyClicks >= prevMonthClicks ? 'text-emerald-600' : 'text-red-500'
+              }`}>
+                {monthlyClicks >= prevMonthClicks ? '↑' : '↓'}{' '}
+                {Math.abs(Math.round(((monthlyClicks - prevMonthClicks) / prevMonthClicks) * 100))}% vs last month
+              </p>
+            )}
+            {(monthlyClicks ?? listing?.click_count ?? 0) === 0 && isNewVenue && (
               <a href="/venue/dashboard/listing" className="inline-block mt-2 text-[11px] text-[#c4956a] hover:underline">
                 Set your booking URL →
               </a>
@@ -582,7 +722,9 @@ export default function DashboardOverview() {
       {/* ── 5. COURT UTILISATION ── */}
       {(isPremium || isTrial) && (
         <Section label="Court Utilisation">
-          {listing?.playtomic_tenant_id ? (
+          {isDemo ? (
+            <DemoUtilisationCard />
+          ) : listing?.playtomic_tenant_id ? (
             <CourtUtilisationCard
               tenantId={listing.playtomic_tenant_id}
               totalCourts={listing.courts ?? listing.courts_count ?? 1}
@@ -665,7 +807,36 @@ export default function DashboardOverview() {
 
       {/* ── 8. GOOGLE BUSINESS PROFILE ── */}
       <Section label="Google Business Profile">
-        {owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
+        {isDemo ? (
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="flex items-center gap-1.5 text-[10px] text-emerald-600">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Connected
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">3,841</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Searches</p>
+                <p className="text-xs text-emerald-600 font-medium mt-0.5">↑ 18%</p>
+              </div>
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">612</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Directions</p>
+              </div>
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">234</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Calls</p>
+              </div>
+              <div>
+                <p className="font-serif text-3xl tracking-tight text-pm-text">634</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-1">Website clicks</p>
+              </div>
+            </div>
+            <p className="text-[10px] text-pm-faint mt-6">Last 28 days</p>
+          </div>
+        ) : owner?.gbp_connected_at ? <GBPInsightsCard /> : <GBPConnectCard />}
       </Section>
 
       {/* ── 9. YOUR LISTING ── */}

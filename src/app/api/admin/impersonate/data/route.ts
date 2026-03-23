@@ -44,9 +44,21 @@ export async function GET(request: NextRequest) {
     activeListing = data
   }
 
+  // Fetch leads for the active listing so impersonation can display them
+  let leads: unknown[] = []
+  if (targetListingId) {
+    const { data: leadRows } = await supabase
+      .from('listing_leads')
+      .select('*')
+      .eq('listing_id', targetListingId)
+      .order('created_at', { ascending: false })
+    leads = leadRows || []
+  }
+
   return NextResponse.json({
     owners: ownerRows,
     listingSummaries: listingSummaries || [],
     activeListing,
+    leads,
   })
 }
