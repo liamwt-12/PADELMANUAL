@@ -205,7 +205,7 @@ function DemoUtilisationCard() {
                   style={{
                     height: `${d.pct}%`,
                     marginTop: `${100 - d.pct}%`,
-                    backgroundColor: d.pct > 80 ? '#059669' : d.pct > 50 ? '#c4956a' : '#d6d3cd',
+                    backgroundColor: d.pct > 75 ? '#059669' : d.pct > 50 ? '#c4956a' : '#d6d3cd',
                   }}
                 />
               </div>
@@ -623,30 +623,78 @@ export default function DashboardOverview() {
       </Section>
 
       {/* ── 4. GOOGLE REPUTATION ── */}
-      {googleReview && !googleReview.notFound && googleReview.rating != null && (
+      {isDemo ? (
         <Section label="Google Reputation">
-          <div className="flex flex-wrap gap-x-16 gap-y-8">
-            <div>
-              <p className="font-serif text-5xl tracking-tight text-pm-text">
-                <span className="text-[#c4956a]">★</span> {googleReview.rating}
-              </p>
-              <p className="text-sm text-pm-muted mt-2">
-                Based on {googleReview.reviewCount?.toLocaleString()} reviews
-              </p>
-              {googleReview.mapsUrl && (
-                <a
-                  href={googleReview.mapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
-                >
-                  View on Google →
-                </a>
-              )}
-            </div>
+          <div>
+            <p className="font-serif text-5xl tracking-tight text-pm-text">
+              <span className="text-[#c4956a]">★</span> 4.8
+            </p>
+            <p className="text-sm text-pm-muted mt-2">
+              Based on 143 reviews
+            </p>
+            <a
+              href="https://maps.google.com"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
+            >
+              View on Google →
+            </a>
+          </div>
+        </Section>
+      ) : (
+        <>
+          {googleReview && !googleReview.notFound && googleReview.rating != null && (
+            <Section label="Google Reputation">
+              <div className="flex flex-wrap gap-x-16 gap-y-8">
+                <div>
+                  <p className="font-serif text-5xl tracking-tight text-pm-text">
+                    <span className="text-[#c4956a]">★</span> {googleReview.rating}
+                  </p>
+                  <p className="text-sm text-pm-muted mt-2">
+                    Based on {googleReview.reviewCount?.toLocaleString()} reviews
+                  </p>
+                  {googleReview.mapsUrl && (
+                    <a
+                      href={googleReview.mapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
+                    >
+                      View on Google →
+                    </a>
+                  )}
+                </div>
 
-            {/* Playtomic alongside Google if available */}
-            {playtomicData && playtomicData.rating != null && (
+                {/* Playtomic alongside Google if available */}
+                {playtomicData && playtomicData.rating != null && (
+                  <div>
+                    <p className="font-serif text-5xl tracking-tight text-pm-text">
+                      <span className="text-[#c4956a]">★</span> {playtomicData.rating}
+                    </p>
+                    <p className="text-sm text-pm-muted mt-2">
+                      Based on {playtomicData.reviewCount?.toLocaleString()} bookings
+                    </p>
+                    <a
+                      href={`https://playtomic.io/tenant/${playtomicData.tenantId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
+                    >
+                      View on Playtomic →
+                    </a>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-4">
+                      Playtomic Reputation
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+
+          {/* Playtomic standalone (no Google data) */}
+          {playtomicData && playtomicData.rating != null && (!googleReview || googleReview.notFound || googleReview.rating == null) && (
+            <Section label="Playtomic Reputation">
               <div>
                 <p className="font-serif text-5xl tracking-tight text-pm-text">
                   <span className="text-[#c4956a]">★</span> {playtomicData.rating}
@@ -662,61 +710,36 @@ export default function DashboardOverview() {
                 >
                   View on Playtomic →
                 </a>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-pm-faint mt-4">
-                  Playtomic Reputation
-                </p>
               </div>
-            )}
-          </div>
-        </Section>
-      )}
+            </Section>
+          )}
 
-      {/* Playtomic standalone (no Google data) */}
-      {playtomicData && playtomicData.rating != null && (!googleReview || googleReview.notFound || googleReview.rating == null) && (
-        <Section label="Playtomic Reputation">
-          <div>
-            <p className="font-serif text-5xl tracking-tight text-pm-text">
-              <span className="text-[#c4956a]">★</span> {playtomicData.rating}
-            </p>
-            <p className="text-sm text-pm-muted mt-2">
-              Based on {playtomicData.reviewCount?.toLocaleString()} bookings
-            </p>
-            <a
-              href={`https://playtomic.io/tenant/${playtomicData.tenantId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block mt-3 text-xs text-[#c4956a] hover:underline font-medium"
-            >
-              View on Playtomic →
-            </a>
-          </div>
-        </Section>
-      )}
+          {/* Google Reputation — not found state */}
+          {googleReview && googleReview.notFound && (
+            <Section label="Google Reputation">
+              <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
+                No Google listing found. Add your venue to Google Maps to appear in local searches.{' '}
+                <a
+                  href="https://business.google.com/create"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#c4956a] hover:underline"
+                >
+                  Create your listing →
+                </a>
+              </p>
+            </Section>
+          )}
 
-      {/* Google Reputation — not found state */}
-      {googleReview && googleReview.notFound && (
-        <Section label="Google Reputation">
-          <p className="text-sm text-pm-muted leading-relaxed max-w-lg">
-            No Google listing found. Add your venue to Google Maps to appear in local searches.{' '}
-            <a
-              href="https://business.google.com/create"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#c4956a] hover:underline"
-            >
-              Create your listing →
-            </a>
-          </p>
-        </Section>
-      )}
-
-      {/* Google Reputation — loading state */}
-      {googleReview === null && listing && (
-        <Section label="Google Reputation">
-          <p className="text-sm text-pm-muted">
-            We&apos;re finding your Google listing. Check back shortly.
-          </p>
-        </Section>
+          {/* Google Reputation — loading state */}
+          {googleReview === null && listing && (
+            <Section label="Google Reputation">
+              <p className="text-sm text-pm-muted">
+                We&apos;re finding your Google listing. Check back shortly.
+              </p>
+            </Section>
+          )}
+        </>
       )}
 
       {/* ── 5. COURT UTILISATION ── */}
