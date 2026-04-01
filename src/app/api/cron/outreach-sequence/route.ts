@@ -49,12 +49,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: 'No sequence emails due', sent: 0 })
   }
 
-  // Check opt-outs
-  const emails = [...new Set(dueRows.map(r => r.email).filter(Boolean))]
-  const { data: optouts } = emails.length > 0
-    ? await supabase.from('outreach_optouts').select('email').in('email', emails)
-    : { data: [] }
-  const optedOutEmails = new Set((optouts || []).map(r => r.email))
+  // Check opt-outs (fetch all to ensure case-insensitive matching)
+  const { data: optouts } = await supabase.from('outreach_optouts').select('email')
+  const optedOutEmails = new Set((optouts || []).map(r => r.email.toLowerCase()))
 
   // Get listing details for templates
   const listingIds = [...new Set(dueRows.map(r => r.listing_id).filter(Boolean))]
@@ -79,8 +76,8 @@ export async function GET(request: NextRequest) {
   let optedOutCount = 0
 
   for (const row of dueRows) {
-    // Skip opted-out emails
-    if (row.email && optedOutEmails.has(row.email)) {
+    // Skip opted-out emails (case-insensitive)
+    if (row.email && optedOutEmails.has(row.email.toLowerCase())) {
       await supabase.from('outreach_log').update({
         sequence_completed: true,
       }).eq('id', row.id)

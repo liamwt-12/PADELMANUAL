@@ -119,17 +119,15 @@ export async function GET(request: NextRequest) {
 
   const sentIds = new Set((alreadySent || []).map(r => r.listing_id))
 
-  // Check opt-outs
+  // Check opt-outs (fetch all to ensure case-insensitive matching)
   const venueEmails = venues.map(v => v.contact_email || v.email).filter(Boolean)
-  const { data: optouts } = venueEmails.length > 0
-    ? await supabase.from('outreach_optouts').select('email').in('email', venueEmails)
-    : { data: [] }
-  const optedOutEmails = new Set((optouts || []).map(r => r.email))
+  const { data: optouts } = await supabase.from('outreach_optouts').select('email')
+  const optedOutEmails = new Set((optouts || []).map(r => r.email.toLowerCase()))
 
   const eligible = venues.filter(v => {
     if (sentIds.has(v.id)) return false
     const email = v.contact_email || v.email
-    if (email && optedOutEmails.has(email)) return false
+    if (email && optedOutEmails.has(email.toLowerCase())) return false
     if (v.manually_outreached_at) {
       const manualDate = new Date(v.manually_outreached_at).getTime()
       if (Date.now() - manualDate < 30 * 24 * 60 * 60 * 1000) return false
@@ -210,10 +208,14 @@ export async function GET(request: NextRequest) {
 
     // Re-check opt-out for scraped emails not in the original set
     if (!venueEmails.includes(email)) {
+      if (optedOutEmails.has(email.toLowerCase())) {
+        skipped++
+        continue
+      }
       const { data: lateOptout } = await supabase
         .from('outreach_optouts')
         .select('email')
-        .eq('email', email)
+        .ilike('email', email)
         .limit(1)
       if (lateOptout && lateOptout.length > 0) {
         skipped++

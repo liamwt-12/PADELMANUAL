@@ -34,13 +34,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 })
   }
 
+  const emailLower = email.toLowerCase()
   const supabase = getSupabaseAdmin()
 
   // Insert opt-out record (ignore conflict if already opted out)
   const { error: optoutError } = await supabase
     .from('outreach_optouts')
     .upsert(
-      { email, listing_id: listing_id || null, reason: reason || 'Manual admin opt-out' },
+      { email: emailLower, listing_id: listing_id || null, reason: reason || 'Manual admin opt-out' },
       { onConflict: 'email' },
     )
 
@@ -64,11 +65,11 @@ export async function POST(request: NextRequest) {
       .eq('id', outreach_log_id)
   }
 
-  // Also mark any other outreach_log entries for this email as complete
+  // Also mark any other outreach_log entries for this email as complete (case-insensitive)
   await supabase
     .from('outreach_log')
     .update({ sequence_completed: true })
-    .eq('email', email)
+    .ilike('email', emailLower)
     .eq('type', 'outreach')
     .eq('sequence_completed', false)
 
