@@ -54,6 +54,10 @@ export async function GET() {
     { url: '/guides/padel-near-me', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-rules-beginners', priority: '0.8', freq: 'monthly' },
     { url: '/guides/padel-vs-pickleball', priority: '0.7', freq: 'monthly' },
+    { url: '/guides/how-to-start-playing-padel', priority: '0.8', freq: 'monthly' },
+    { url: '/guides/find-padel-courts-near-me', priority: '0.8', freq: 'monthly' },
+    { url: '/guides/how-much-does-padel-cost', priority: '0.8', freq: 'monthly' },
+    { url: '/guides/best-padel-rackets-beginners-uk', priority: '0.8', freq: 'monthly' },
     // Play Today
     { url: '/play-today', priority: '0.9', freq: 'daily' },
     ...['london', 'manchester', 'birmingham', 'bristol', 'leeds', 'edinburgh', 'glasgow', 'brighton', 'nottingham', 'liverpool']
