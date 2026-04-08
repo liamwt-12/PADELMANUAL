@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import PlayTodayBanner from '@/components/PlayTodayBanner';
 
 export const metadata: Metadata = {
   title: 'Padel Rules — The Complete Beginner\'s Guide (2026)',
@@ -83,6 +84,10 @@ export default function PadelRulesPage() {
             <div className="font-serif text-lg font-semibold tracking-tight">Padel vs Tennis</div>
             <p className="mt-1 text-xs text-pm-faint">What&apos;s the difference?</p>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <PlayTodayBanner />
         </div>
       </article>
     </main>

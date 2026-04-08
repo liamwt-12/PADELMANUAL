@@ -1,6 +1,7 @@
 import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PlayTodayBanner from '@/components/PlayTodayBanner';
 
 export const metadata: Metadata = {
   title: 'Padel vs Tennis: Which Should You Play?',
@@ -181,6 +182,10 @@ export default async function PadelVsTennisPage() {
             <div className="font-serif text-lg font-semibold tracking-tight">Beginner guide</div>
             <p className="mt-1 text-xs text-pm-faint">Everything you need for your first session</p>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <PlayTodayBanner />
         </div>
 
         <div className="mt-10">

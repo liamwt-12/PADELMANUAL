@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
+import PlayTodayBanner from '@/components/PlayTodayBanner';
 
 export const metadata: Metadata = {
   title: 'Best Padel Courts in London 2026 — Our Top Picks',
@@ -159,6 +160,10 @@ export default async function BestLondonPage() {
             ))}
           </div>
         </section>
+
+        <div className="mt-12">
+          <PlayTodayBanner city="London" />
+        </div>
       </article>
     </main>
   );

@@ -1,6 +1,7 @@
 import { getSupabase } from '@/lib/supabase';
 import { STATIONS } from '@/lib/stations';
 import { UK_STATIONS } from '@/lib/uk-stations';
+import { CITY_GUIDE_SLUGS } from '@/app/guides/padel-[city]/cities';
 
 const BASE = 'https://www.padelmanual.com';
 
@@ -58,6 +59,12 @@ export async function GET() {
     { url: '/guides/find-padel-courts-near-me', priority: '0.8', freq: 'monthly' },
     { url: '/guides/how-much-does-padel-cost', priority: '0.8', freq: 'monthly' },
     { url: '/guides/best-padel-rackets-beginners-uk', priority: '0.8', freq: 'monthly' },
+    // Hyperlocal city guides (25 cities)
+    ...CITY_GUIDE_SLUGS.map(slug => ({
+      url: `/guides/padel-${slug}`,
+      priority: '0.8',
+      freq: 'weekly',
+    })),
     // Play Today
     { url: '/play-today', priority: '0.9', freq: 'daily' },
     ...['london', 'manchester', 'birmingham', 'bristol', 'leeds', 'edinburgh', 'glasgow', 'brighton', 'nottingham', 'liverpool']

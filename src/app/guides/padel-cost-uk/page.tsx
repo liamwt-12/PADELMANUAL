@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
+import PlayTodayBanner from '@/components/PlayTodayBanner';
 
 export const metadata: Metadata = {
   title: 'How Much Does Padel Cost in the UK? (2026 Prices)',
@@ -184,6 +185,10 @@ export default async function PadelCostPage() {
             <div className="font-serif text-lg font-semibold tracking-tight">Rackets under £100</div>
             <p className="mt-1 text-xs text-pm-faint">Quality gear without the premium price</p>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <PlayTodayBanner />
         </div>
       </article>
     </main>

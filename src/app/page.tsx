@@ -29,23 +29,45 @@ export default async function Home() {
 
   return (
     <main className="pb-8">
-      {/* ── Hero with Search ── */}
-      <section className="pt-10 pb-14 md:pt-14 md:pb-20">
-        <h1 className="max-w-[600px] font-serif text-4xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-          Find padel courts<br />across the UK.
+      {/* ── Play Today HERO ── */}
+      <section className="pt-10 pb-12 md:pt-14 md:pb-16">
+        <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-pm-accent">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pm-accent opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-pm-accent" />
+          </span>
+          Live availability
+        </div>
+        <h1 className="mt-4 max-w-[760px] font-serif text-[40px] font-bold leading-[1.02] tracking-tight md:text-[68px]">
+          Find a padel court available right now.
         </h1>
-        <p className="mt-4 max-w-[420px] text-base leading-relaxed text-pm-muted md:text-lg">
-          {venueCount} venues. {courtTotal.toLocaleString()} courts. Live availability.
-          The only UK padel directory with real-time booking data.
+        <p className="mt-5 max-w-[520px] text-base leading-relaxed text-pm-muted md:text-lg">
+          Real-time slots from Playtomic across {venueCount}+ UK venues. The only UK padel
+          directory with live booking data — see what is bookable in the next hour, this
+          evening, or tomorrow.
         </p>
-
-        {/* Search box */}
-        <div className="mt-8">
-          <HomeSearch cities={allCities} venueCount={venueCount} />
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <a
+            href="/play-today"
+            className="group inline-flex items-center gap-2 rounded-full bg-pm-accent px-8 py-4 text-base font-semibold text-white shadow-lg shadow-pm-accent/20 transition-transform hover:scale-[1.02]"
+          >
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+            </span>
+            Play Today
+            <span className="transition-transform group-hover:translate-x-1" aria-hidden>→</span>
+          </a>
+          <a
+            href="/find"
+            className="text-sm font-medium text-pm-muted underline underline-offset-4 hover:text-pm-text transition-colors"
+          >
+            Or browse all {venueCount} venues
+          </a>
         </div>
 
         {/* Quick stats */}
-        <div className="mt-8 flex gap-6 md:gap-10">
+        <div className="mt-10 flex gap-6 md:gap-10">
           <a href="/find" className="group">
             <div className="font-serif text-3xl md:text-4xl font-bold text-pm-text group-hover:text-pm-accent transition-colors">{venueCount}</div>
             <div className="text-xs text-pm-faint mt-0.5">venues</div>
@@ -54,31 +76,25 @@ export default async function Home() {
             <div className="font-serif text-3xl md:text-4xl font-bold text-pm-text">{courtTotal.toLocaleString()}</div>
             <div className="text-xs text-pm-faint mt-0.5">courts</div>
           </div>
-          <div>
-            <div className="font-serif text-3xl md:text-4xl font-bold text-emerald-600 flex items-center gap-2">
+          <a href="/play-today" className="group">
+            <div className="font-serif text-3xl md:text-4xl font-bold text-emerald-600 flex items-center gap-2 group-hover:text-emerald-700 transition-colors">
               223
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <div className="text-xs text-pm-faint mt-0.5">with live availability</div>
-          </div>
+          </a>
         </div>
       </section>
 
-      {/* ── Play Today CTA ── */}
-      <section className="mb-10 rounded-2xl border border-emerald-200/60 bg-emerald-50/30 p-6 md:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-          <div>
-            <p className="font-serif text-lg font-semibold tracking-tight text-pm-text">Want to play today?</p>
-            <p className="text-sm text-pm-muted mt-0.5">See which courts have slots available right now.</p>
-          </div>
+      {/* ── Venue Search (secondary) ── */}
+      <section className="mb-14">
+        <div className="label-caps">Browse the directory</div>
+        <h2 className="mt-3 font-serif text-2xl md:text-3xl font-semibold tracking-tight">
+          Search by city, venue, or postcode
+        </h2>
+        <div className="mt-5">
+          <HomeSearch cities={allCities} venueCount={venueCount} />
         </div>
-        <a
-          href="/play-today"
-          className="rounded-full bg-pm-accent text-white px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 text-center"
-        >
-          Find available courts →
-        </a>
       </section>
 
       {/* ── Top Cities ── */}

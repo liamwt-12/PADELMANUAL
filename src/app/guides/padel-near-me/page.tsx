@@ -1,5 +1,6 @@
 import { getVenueCount, getCourtTotal, getTopCities } from '@/lib/db'
 import type { Metadata } from 'next'
+import PlayTodayBanner from '@/components/PlayTodayBanner'
 
 export const revalidate = 86400
 
@@ -113,6 +114,10 @@ export default async function PadelNearMePage() {
             <div className="font-serif text-lg font-semibold tracking-tight">Find your racket</div>
             <p className="mt-1 text-xs text-pm-faint">30-second quiz with personalised picks</p>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <PlayTodayBanner />
         </div>
       </article>
     </main>

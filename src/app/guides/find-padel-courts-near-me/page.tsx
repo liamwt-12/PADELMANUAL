@@ -1,6 +1,7 @@
 import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PlayTodayBanner from '@/components/PlayTodayBanner';
 
 export const metadata: Metadata = {
   title: 'How to Find Padel Courts Near You in the UK',
@@ -190,6 +191,10 @@ export default async function FindCourtsPage() {
             <div className="font-serif text-lg font-semibold tracking-tight">All venues</div>
             <p className="mt-1 text-xs text-pm-faint">{totalVenues}+ venues across the UK</p>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <PlayTodayBanner />
         </div>
 
         <div className="mt-10">

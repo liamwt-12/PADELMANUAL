@@ -2,6 +2,7 @@ import { getSupabase } from '@/lib/supabase';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import PlayTodayBanner from '@/components/PlayTodayBanner';
 
 export const metadata: Metadata = {
   title: 'Best Padel Rackets for Beginners in the UK (2026)',
@@ -206,6 +207,10 @@ export default async function BeginnerRacketsPage() {
             <div className="font-serif text-lg font-semibold tracking-tight">Beginner guide</div>
             <p className="mt-1 text-xs text-pm-faint">Everything you need for your first session</p>
           </a>
+        </div>
+
+        <div className="mt-12">
+          <PlayTodayBanner />
         </div>
 
         <div className="mt-10">
