@@ -38,12 +38,14 @@ export default function AllVenuesPage() {
   }, [allVenues])
 
   const premiumCount = allVenues.filter(v => v.subscription_status === 'premium').length
-  const freeCount = allVenues.length - premiumCount
-  const hasFreeVenues = freeCount > 0
+  const trialCount = allVenues.filter(v => v.subscription_status === 'trial').length
+  const freeCount = allVenues.filter(v => v.subscription_status === 'free').length
+  const hasTrialVenues = trialCount > 0
 
   const totalViews = allVenues.reduce((sum, v) => sum + v.view_count, 0)
   const totalClicks = allVenues.reduce((sum, v) => sum + v.click_count, 0)
   const totalLeads = Object.values(leadStats).reduce((sum, c) => sum + c, 0)
+  const hasAnyData = totalViews > 0 || totalClicks > 0 || totalLeads > 0
 
   function handleManage(listingId: string) {
     setActiveVenueId(listingId)
@@ -68,15 +70,40 @@ export default function AllVenuesPage() {
         <p className="mt-2 text-sm text-pm-muted">
           {allVenues.length} venue{allVenues.length !== 1 ? 's' : ''}
           {premiumCount > 0 && <> &middot; {premiumCount} premium</>}
+          {trialCount > 0 && <> &middot; {trialCount} trial</>}
           {freeCount > 0 && <> &middot; {freeCount} free</>}
         </p>
       </div>
+
+      {/* Trial welcome message */}
+      {hasTrialVenues && (
+        <div className="mb-8 rounded-2xl border border-pm-accent/30 bg-pm-accent/[0.04] p-5 md:p-6">
+          <div className="flex items-start gap-3">
+            <span className="relative mt-2 flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pm-accent opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-pm-accent" />
+            </span>
+            <div>
+              <p className="font-serif text-base font-semibold tracking-tight text-pm-text">
+                Welcome to your 30-day trial.
+              </p>
+              <p className="mt-1 text-sm text-pm-muted leading-relaxed">
+                Your venues are live and being found by players — data builds over the coming days.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Venue rows */}
       <div className="border-t border-pm-border">
         {allVenues.map(v => {
           const leads = leadStats[v.listing_id] || 0
-          const isPremium = v.subscription_status === 'premium'
+          const status = v.subscription_status
+          const rowHasData = v.view_count > 0 || v.click_count > 0 || leads > 0
+
+          const statusLabel = status === 'premium' ? 'Premium' : status === 'trial' ? 'Trial' : 'Free'
+          const statusActive = status === 'premium' || status === 'trial'
 
           return (
             <div
@@ -93,26 +120,32 @@ export default function AllVenuesPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-4 mt-1.5">
-                  <span className="text-xs text-pm-muted">
-                    Views: {v.view_count.toLocaleString()}
-                  </span>
-                  <span className="text-xs text-pm-muted">
-                    Clicks: {v.click_count.toLocaleString()}
-                  </span>
-                  <span className="text-xs text-pm-muted">
-                    Leads: {leads.toLocaleString()}
-                  </span>
+                  {rowHasData ? (
+                    <>
+                      <span className="text-xs text-pm-muted">
+                        Views: {v.view_count.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-pm-muted">
+                        Clicks: {v.click_count.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-pm-muted">
+                        Leads: {leads.toLocaleString()}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs italic text-pm-faint">Building data…</span>
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
                 <span className={`flex items-center gap-1.5 text-xs ${
-                  isPremium ? 'text-pm-accent' : 'text-pm-faint'
+                  statusActive ? 'text-pm-accent' : 'text-pm-faint'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                    isPremium ? 'bg-pm-accent' : 'bg-pm-ash'
+                    statusActive ? 'bg-pm-accent' : 'bg-pm-ash'
                   }`} />
-                  {isPremium ? 'Premium' : 'Free'}
+                  {statusLabel}
                 </span>
                 <button
                   onClick={() => handleManage(v.listing_id)}
@@ -120,14 +153,6 @@ export default function AllVenuesPage() {
                 >
                   Manage &rarr;
                 </button>
-                {!isPremium && (
-                  <a
-                    href="/venue/dashboard/settings"
-                    className="text-xs text-pm-muted hover:text-pm-accent transition-colors"
-                  >
-                    Upgrade &rarr;
-                  </a>
-                )}
               </div>
             </div>
           )
@@ -137,25 +162,14 @@ export default function AllVenuesPage() {
       {/* Totals */}
       <div className="mt-8 border-t border-pm-border pt-8">
         <p className="label-caps mb-4">Total This Month</p>
-        <p className="text-sm text-pm-muted">
-          {totalViews.toLocaleString()} views &middot; {totalClicks.toLocaleString()} clicks &middot; {totalLeads.toLocaleString()} leads
-        </p>
-      </div>
-
-      {/* Upgrade all CTA */}
-      {hasFreeVenues && (
-        <div className="mt-8 border-t border-pm-border pt-8">
-          <a
-            href="/venue/dashboard/settings"
-            className="inline-flex items-center rounded-full bg-[#c4956a] text-white px-6 py-3 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90"
-          >
-            Upgrade all venues &rarr;
-          </a>
-          <p className="mt-2 text-xs text-pm-faint">
-            &pound;99/month covers all {allVenues.length} venues
+        {hasAnyData ? (
+          <p className="text-sm text-pm-muted">
+            {totalViews.toLocaleString()} views &middot; {totalClicks.toLocaleString()} clicks &middot; {totalLeads.toLocaleString()} leads
           </p>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm italic text-pm-faint">Building data…</p>
+        )}
+      </div>
     </div>
   )
 }
