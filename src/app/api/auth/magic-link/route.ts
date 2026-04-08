@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       { auth: { persistSession: false } }
     );
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://padelmanual.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.padelmanual.com';
 
     // Check if they have a venue_owners row (i.e. they've claimed a venue)
     const { data: ownerRows } = await supabase
@@ -55,7 +55,12 @@ export async function POST(request: NextRequest) {
     }
 
     const tokenHash = data.properties.hashed_token;
-    const verifyUrl = `${siteUrl}/venue/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink`;
+    // Point at the /confirm landing page rather than the callback directly.
+    // The landing page is a static GET that does not consume the OTP, so
+    // email security scanners (Outlook ATP, Mimecast, Defender, etc.) can
+    // pre-fetch the link without invalidating it. The actual verification
+    // happens via a POST form submit on the confirm page.
+    const verifyUrl = `${siteUrl}/venue/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink&next=${encodeURIComponent('/venue/dashboard')}`;
 
     // Send via Resend
     if (resendKey) {
