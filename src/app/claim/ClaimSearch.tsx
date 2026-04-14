@@ -27,6 +27,7 @@ export default function ClaimSearch() {
       .from('listings')
       .select('id, name, slug, city, claimed')
       .eq('listing_type', 'venue')
+      .neq('permanently_closed', true)
       .ilike('name', `%${query.trim()}%`)
       .limit(10)
 

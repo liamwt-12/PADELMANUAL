@@ -10,14 +10,16 @@ export async function GET() {
   const { data: listings } = await supabase
     .from('listings')
     .select('slug, city')
-    .not('slug', 'is', null);
+    .not('slug', 'is', null)
+    .neq('permanently_closed', true);
 
   const cities = [...new Set((listings || []).map(l => l.city).filter(Boolean))];
 
   const { data: postcodeData } = await supabase
     .from('listings')
     .select('postcode')
-    .not('postcode', 'is', null);
+    .not('postcode', 'is', null)
+    .neq('permanently_closed', true);
 
   const postcodeAreas = [...new Set(
     (postcodeData || [])

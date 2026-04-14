@@ -26,7 +26,8 @@ export async function getCourtTotal() {
   const { data, error } = await getSupabase()
     .from("listings")
     .select("courts")
-    .not("courts", "is", null);
+    .not("courts", "is", null)
+    .neq("permanently_closed", true);
   if (error || !data) return 0;
   return data.reduce((sum, row) => sum + (row.courts || 0), 0);
 }
@@ -81,6 +82,7 @@ export async function getFeaturedVenues(limit = 4) {
     .select("*")
     .eq("listing_type", "venue")
     .not("courts", "is", null)
+    .neq("permanently_closed", true)
     .order("courts", { ascending: false })
     .limit(limit);
   if (error) return [];
@@ -96,6 +98,7 @@ export async function getFeatured(city: string) {
     .eq("city", city)
     .eq("status", "published")
     .eq("featured", true)
+    .neq("permanently_closed", true)
     .order("created_at", { ascending: false })
     .limit(12);
   if (error) return [];
@@ -110,6 +113,7 @@ export async function getListingsByType(city: string, type: ListingType) {
     .select("*")
     .eq("city", city)
     .eq("listing_type", mappedType)
+    .neq("permanently_closed", true)
     .order("name", { ascending: true });
   
   if (!error && data && data.length > 0) return data as Listing[];
@@ -121,6 +125,7 @@ export async function getListingsByType(city: string, type: ListingType) {
     .eq("city", city)
     .eq("type", type)
     .eq("status", "published")
+    .neq("permanently_closed", true)
     .order("name", { ascending: true });
   if (legacyError) return [];
   return (legacyData ?? []) as Listing[];
@@ -132,6 +137,7 @@ export async function getListingBySlug(slug: string) {
     .from("listings")
     .select("*")
     .eq("slug", slug)
+    .neq("permanently_closed", true)
     .single();
   if (error) return null;
   return data as Listing;
@@ -143,6 +149,7 @@ export async function getAllListings(city: string) {
     .from("listings")
     .select("*")
     .eq("city", city)
+    .neq("permanently_closed", true)
     .order("name", { ascending: true });
   if (error) return [];
   return (data ?? []) as Listing[];
@@ -152,7 +159,8 @@ export async function getListingCount(city: string) {
   const { count, error } = await getSupabase()
     .from("listings")
     .select("*", { count: "exact", head: true })
-    .eq("city", city);
+    .eq("city", city)
+    .neq("permanently_closed", true);
   if (error) return 0;
   return count ?? 0;
 }

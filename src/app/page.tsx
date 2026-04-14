@@ -22,6 +22,7 @@ export default async function Home() {
     .from('listings')
     .select('city')
     .eq('listing_type', 'venue')
+    .neq('permanently_closed', true)
     .not('city', 'is', null);
   const allCities = [...new Set((citiesData || []).map(c => c.city).filter(Boolean))].sort() as string[];
 

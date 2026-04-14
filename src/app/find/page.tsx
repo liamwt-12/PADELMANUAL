@@ -15,6 +15,7 @@ export default async function FindPage() {
     .select('id, name, slug, lat, lng, city, region, courts, indoor, booking_platform, playtomic_url, listing_type, claimed, premium, postcode, address')
     .not('lat', 'is', null)
     .not('lng', 'is', null)
+    .neq('permanently_closed', true)
     .order('name');
 
   const cities = [...new Set((listings || []).map(l => l.city).filter(Boolean))].sort();
