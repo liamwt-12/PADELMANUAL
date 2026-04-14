@@ -10,16 +10,8 @@
       "schedule": "0 8 * * 1"
     },
     {
-      "path": "/api/cron/outreach",
-      "schedule": "0 9 * * 1-5"
-    },
-    {
       "path": "/api/cron/trial-followup",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/outreach-sequence",
-      "schedule": "30 9 * * 1-5"
     },
     {
       "path": "/api/cron/generate-briefs",
