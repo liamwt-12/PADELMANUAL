@@ -5,7 +5,7 @@ import MobileNav from "./MobileNav";
 
 export const metadata: Metadata = {
   title: { default: "Padel Manual — The Modern Guide to UK Padel", template: "%s | Padel Manual" },
-  description: "Find padel courts, read gear reviews, and book with live availability. The UK's most comprehensive padel directory.",
+  description: "Find padel courts and read gear reviews across 500+ UK venues. The UK's most comprehensive padel directory.",
   metadataBase: new URL("https://www.padelmanual.com"),
   openGraph: {
     type: "website",
@@ -13,12 +13,12 @@ export const metadata: Metadata = {
     url: "https://www.padelmanual.com",
     siteName: "Padel Manual",
     title: "Padel Manual — The Modern Guide to UK Padel",
-    description: "Find padel courts, read gear reviews, and book with live availability.",
+    description: "Find padel courts and read gear reviews across 500+ UK venues.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Padel Manual — The Modern Guide to UK Padel",
-    description: "Find padel courts, read gear reviews, and book with live availability.",
+    description: "Find padel courts and read gear reviews across 500+ UK venues.",
   },
   // NOTE: do not add a site-wide `alternates.canonical` here. A root-layout
   // canonical is inherited by every route that does not override it, which made
