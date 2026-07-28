@@ -479,12 +479,17 @@ locked (migration `supabase/migrations/20260728090000_mothball_lock_down_anon_ac
 reviews, which `/[slug]` renders. Verified with the same anon-key probes: 12/12 blocked for
 write, 11/11 blocked for read, public site reads unaffected.
 
-**Still open — Liam's own actions, outside this session:**
+**Liam's own actions — both done and verified 28 July:**
 
-- Cancelling the £29/mo self-subscription in Stripe.
-- Restricting `GOOGLE_PLACES_API_KEY` in the Google Cloud console. The key is still
-  server-rendered into the public HTML of every venue page and was confirmed usable by an
-  arbitrary caller with no referrer. **Not yet verified as restricted.**
+- **Stripe self-subscription cancelled.** `sub_1T9rLAEOQ4ZTBEbMfVvyGZbw` now reads
+  `status: canceled`. Lifetime revenue closes at £145, all of it self-paid. Gross MRR is
+  now £0, matching external MRR.
+- **`GOOGLE_PLACES_API_KEY` restricted.** The key is still server-rendered into the public
+  HTML of all venue pages — that has not changed — but it is now HTTP-referrer restricted
+  and no longer usable by whoever copies it. Verified: a request with no referrer or an
+  unrelated referrer returns **HTTP 403**, while a request carrying a `padelmanual.com`
+  referrer returns **HTTP 200**, so the embedded maps still work for real visitors. During
+  the audit the same no-referrer request returned 200.
 
 **Known-open, accepted for now:**
 
