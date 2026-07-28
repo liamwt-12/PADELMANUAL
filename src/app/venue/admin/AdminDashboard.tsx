@@ -105,63 +105,13 @@ export default function AdminDashboard({
   contentStats: { total: number; withDescription: number }
   emailStats: { total: number; withEmail: number }
 }) {
-  const [demoEmail, setDemoEmail] = useState('')
-  const [demoSending, setDemoSending] = useState(false)
   const [demoResult, setDemoResult] = useState('')
-  const [triggeringFeatured, setTriggeringFeatured] = useState(false)
   const [actionResult, setActionResult] = useState('')
-  const [outreachEligible, setOutreachEligible] = useState<number | null>(null)
-  const [outreachWithLeads, setOutreachWithLeads] = useState<number>(0)
-  const [outreachBatchSize, setOutreachBatchSize] = useState(50)
-  const [outreachSending, setOutreachSending] = useState(false)
-  const [outreachLoadingPreview, setOutreachLoadingPreview] = useState(false)
   const [outreachSearch, setOutreachSearch] = useState('')
   const [outreachResults, setOutreachResults] = useState<{ id: string; name: string; city: string | null; email: string | null; manually_outreached_at: string | null }[]>([])
   const [outreachSearching, setOutreachSearching] = useState(false)
   const [outreachMarked, setOutreachMarked] = useState<Set<string>>(new Set())
   const [optingOut, setOptingOut] = useState<Set<string>>(new Set())
-
-  async function triggerFeaturedCron() {
-    setTriggeringFeatured(true)
-    setActionResult('')
-    try {
-      const res = await fetch('/api/cron/featured-venue')
-      const data = await res.json()
-      setActionResult(JSON.stringify(data, null, 2))
-    } catch (err) {
-      setActionResult(`Error: ${err}`)
-    }
-    setTriggeringFeatured(false)
-  }
-
-  async function loadOutreachPreview() {
-    setOutreachLoadingPreview(true)
-    try {
-      const res = await fetch('/api/cron/outreach?preview=true')
-      const data = await res.json()
-      setOutreachEligible(data.eligible ?? 0)
-      setOutreachWithLeads(data.with_leads ?? 0)
-    } catch {
-      setActionResult('Failed to load outreach preview')
-    }
-    setOutreachLoadingPreview(false)
-  }
-
-  async function sendOutreachBatch() {
-    const count = Math.min(outreachBatchSize, outreachEligible || 0)
-    if (!confirm(`Send outreach emails to ${count} venues?`)) return
-    setOutreachSending(true)
-    setActionResult('')
-    try {
-      const res = await fetch(`/api/cron/outreach?batch_size=${outreachBatchSize}`)
-      const data = await res.json()
-      setActionResult(`Sent to ${data.sent} venues. ${data.skipped} skipped (no contact). Next eligible batch: ${data.remaining} venues remaining.`)
-      setOutreachEligible(data.remaining)
-    } catch (err) {
-      setActionResult(`Error: ${err}`)
-    }
-    setOutreachSending(false)
-  }
 
   async function searchOutreach(q: string) {
     setOutreachSearch(q)
@@ -215,29 +165,6 @@ export default function AdminDashboard({
     }
   }
 
-  async function sendDemoAccess() {
-    if (!demoEmail.includes('@')) return
-    setDemoSending(true)
-    setDemoResult('')
-    try {
-      const res = await fetch('/api/admin/send-demo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: demoEmail }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setDemoResult(`Sent to ${demoEmail}`)
-        setDemoEmail('')
-      } else {
-        setDemoResult(data.error || 'Failed')
-      }
-    } catch {
-      setDemoResult('Failed to send')
-    }
-    setDemoSending(false)
-  }
-
   return (
     <div>
       <h1 className="font-serif text-3xl tracking-tight text-pm-text mb-2">Admin</h1>
@@ -251,24 +178,9 @@ export default function AdminDashboard({
           <span className="text-[10px] text-pm-faint">All features enabled &middot; Premium</span>
         </div>
         <p className="text-xs text-pm-muted mb-4">
-          Send someone a link to explore the full dashboard as a demo.
+          View the full dashboard as the demo venue.
         </p>
         <div className="flex items-center gap-2">
-          <input
-            type="email"
-            value={demoEmail}
-            onChange={e => setDemoEmail(e.target.value)}
-            placeholder="their@email.com"
-            className="flex-1 max-w-xs px-4 py-2.5 text-sm border border-pm-border rounded-xl bg-white focus:outline-none focus:border-pm-accent"
-            onKeyDown={e => e.key === 'Enter' && sendDemoAccess()}
-          />
-          <button
-            onClick={sendDemoAccess}
-            disabled={demoSending || !demoEmail.includes('@')}
-            className="rounded-full bg-pm-accent text-white px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
-          >
-            {demoSending ? 'Sending...' : 'Send demo access \u2192'}
-          </button>
           <button
             onClick={async () => {
               const res = await fetch('/api/admin/impersonate', {
@@ -301,65 +213,17 @@ export default function AdminDashboard({
         )}
       </section>
 
-      {/* Outreach Trigger */}
+      {/* Outreach — retired */}
       <section className="mb-10 rounded-2xl border border-pm-border bg-pm-bg-card p-6">
-        <h2 className="font-serif text-xl tracking-tight text-pm-text mb-1">Send Outreach</h2>
-        <p className="text-xs text-pm-faint mb-4">
-          Automated cron runs weekdays at 9am UTC (batch of 50). You can also trigger manually below.
+        <h2 className="font-serif text-xl tracking-tight text-pm-text mb-1">Outreach (retired)</h2>
+        <p className="text-xs text-pm-faint">
+          All automated venue outreach has been switched off. The send endpoints are disabled and the
+          crons are removed from vercel.json. The log below is kept for the record; opt-outs still apply.
         </p>
-
-        {outreachEligible === null ? (
-          <button
-            onClick={loadOutreachPreview}
-            disabled={outreachLoadingPreview}
-            className="btn-secondary text-xs disabled:opacity-50"
-          >
-            {outreachLoadingPreview ? 'Loading...' : 'Check eligible venues'}
-          </button>
-        ) : (
-          <div>
-            <div className="flex items-baseline gap-4 mb-4">
-              <div>
-                <span className="font-serif text-2xl font-bold text-pm-text">{outreachEligible}</span>
-                <span className="text-xs text-pm-faint ml-1.5">eligible venues</span>
-              </div>
-              {outreachWithLeads > 0 && (
-                <div className="text-xs text-pm-muted">
-                  {outreachWithLeads} with leads waiting
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="text-xs text-pm-faint">Batch size:</label>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={outreachBatchSize}
-                onChange={e => setOutreachBatchSize(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
-                className="w-20 px-3 py-2 text-sm border border-pm-border rounded-lg bg-white focus:outline-none focus:border-pm-accent"
-              />
-              <button
-                onClick={sendOutreachBatch}
-                disabled={outreachSending || outreachEligible === 0}
-                className="btn-primary text-xs disabled:opacity-50"
-              >
-                {outreachSending ? 'Sending...' : `Send to ${Math.min(outreachBatchSize, outreachEligible)} venues`}
-              </button>
-            </div>
-          </div>
-        )}
       </section>
 
       {/* Other cron triggers */}
       <div className="flex flex-wrap gap-3 mb-8">
-        <button
-          onClick={triggerFeaturedCron}
-          disabled={triggeringFeatured}
-          className="btn-secondary text-xs disabled:opacity-50"
-        >
-          {triggeringFeatured ? 'Running...' : 'Trigger featured venue'}
-        </button>
         <a
           href="/api/newsletter/preview"
           target="_blank"
