@@ -20,14 +20,15 @@ export const metadata: Metadata = {
     title: "Padel Manual — The Modern Guide to UK Padel",
     description: "Find padel courts, read gear reviews, and book with live availability.",
   },
-  alternates: {
-    canonical: "https://www.padelmanual.com",
-  },
+  // NOTE: do not add a site-wide `alternates.canonical` here. A root-layout
+  // canonical is inherited by every route that does not override it, which made
+  // ~2,860 of 2,869 pages declare themselves duplicates of the homepage. Each
+  // route sets its own canonical (or lets Next infer it from the URL).
 };
 
 const navLinks = [
   { label: "Find Courts", href: "/find" },
-  { label: "Play Today", href: "/play-today", accent: true },
+  { label: "Play Today", href: "/play-today" },
   { label: "Gear", href: "/gear" },
   { label: "Shop", href: "/gear/shop" },
   { label: "Quiz", href: "/quiz" },
@@ -49,13 +50,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`text-[13px] font-medium transition-colors ${
-                    link.accent
-                      ? 'text-pm-text hover:text-pm-accent flex items-center gap-1.5'
-                      : 'text-pm-muted hover:text-pm-text'
-                  }`}
+                  className="text-[13px] font-medium text-pm-muted hover:text-pm-text transition-colors"
                 >
-                  {link.accent && <span className="w-1.5 h-1.5 rounded-full bg-pm-accent" />}
                   {link.label}
                 </a>
               ))}

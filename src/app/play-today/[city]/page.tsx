@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase'
 import type { Metadata } from 'next'
+import UnavailableNotice from '../UnavailableNotice'
 
 export const revalidate = 3600
 
@@ -25,8 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cityName = slugToCity(slug)
 
   return {
-    title: `Book Padel Courts Today in ${cityName}`,
-    description: `Find padel courts available today in ${cityName}. See live availability, compare prices and book courts in seconds.`,
+    title: `Padel Courts in ${cityName} — Book Direct`,
+    description: `Padel venues in ${cityName} with direct booking links. Live availability on Padel Manual is currently paused.`,
   }
 }
 
@@ -64,37 +65,29 @@ export default async function PlayTodayCityPage({ params }: Props) {
             ← Play Today
           </a>
           <h1 className="mt-6 font-serif text-4xl font-bold tracking-tight md:text-5xl">
-            Book Padel Courts Today in {cityName}
+            Padel Courts in {cityName}
           </h1>
           <p className="mt-4 text-base text-pm-muted leading-relaxed">
-            {totalVenues || 0} padel venues in {cityName}, {liveCount} with live availability you can book right now.
+            {totalVenues || 0} padel venues in {cityName}, {liveCount} of which take bookings
+            through Playtomic.
           </p>
         </section>
 
-        {/* CTA to interactive page */}
-        <section className="mb-10 rounded-2xl border border-emerald-200/60 bg-emerald-50/30 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-            <p className="text-sm text-pm-muted">See what&apos;s available right now</p>
-          </div>
-          <a
-            href="/play-today"
-            className="rounded-full bg-pm-accent text-white px-6 py-3 text-sm font-semibold hover:opacity-90 transition-opacity shrink-0 text-center"
-          >
-            Check live availability →
-          </a>
-        </section>
+        <UnavailableNotice cityName={cityName} />
 
         <div className="prose-pm space-y-8 text-sm leading-[1.9] text-pm-muted">
           <section>
             <h2 className="font-serif text-2xl font-semibold text-pm-text tracking-tight mb-3">
-              How Play Today works
+              Booking a court in {cityName}
             </h2>
             <p>
-              Padel Manual&apos;s Play Today feature checks real-time court availability across {cityName}&apos;s padel venues. Select your time window — morning, afternoon, or evening — and see which courts have open slots you can book immediately through Playtomic.
+              Padel Manual used to read live court availability directly from Playtomic. That data
+              is no longer available to us, so we have switched the feature off rather than show you
+              slot times we cannot stand behind.
             </p>
             <p>
-              No more checking venue by venue. One search shows you every available court near you, sorted by distance, with prices and one-click booking.
+              Each venue below links to its own booking page, where the availability is real and
+              current. Most {cityName} clubs take bookings through Playtomic.
             </p>
           </section>
 
@@ -102,10 +95,11 @@ export default async function PlayTodayCityPage({ params }: Props) {
           {liveCount > 0 && (
             <section>
               <h2 className="font-serif text-2xl font-semibold text-pm-text tracking-tight mb-3">
-                {cityName} venues with live booking
+                {cityName} venues that book through Playtomic
               </h2>
               <p className="mb-4">
-                These {liveCount} venues show real-time availability on Padel Manual:
+                These {liveCount} venues take online bookings — check availability on their own
+                booking page:
               </p>
               <div className="grid gap-2">
                 {(playtomicVenues || []).map(v => (
@@ -117,10 +111,7 @@ export default async function PlayTodayCityPage({ params }: Props) {
                         {v.courts ? ` · ${v.courts} courts` : ''}
                       </span>
                     </div>
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 shrink-0">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      Live
-                    </span>
+                    <span className="text-[10px] text-pm-faint shrink-0">Playtomic</span>
                   </a>
                 ))}
               </div>
@@ -135,7 +126,7 @@ export default async function PlayTodayCityPage({ params }: Props) {
               <strong className="text-pm-text">Peak times fill fast.</strong> Weekday evenings (6–9pm) and weekend mornings are the busiest slots. If you can play off-peak — weekday mornings or early afternoons — you&apos;ll find more availability and lower prices.
             </p>
             <p>
-              <strong className="text-pm-text">Book same-day.</strong> Courts that appear full in the evening often have cancellations. Check Play Today throughout the day — slots open up as players change plans.
+              <strong className="text-pm-text">Book same-day.</strong> Courts that appear full in the evening often have cancellations. Check the venue&apos;s own booking page throughout the day — slots open up as players change plans.
             </p>
             <p>
               <strong className="text-pm-text">Try different venues.</strong> {cityName} has {totalVenues || 'multiple'} padel venues. If your usual spot is full, there&apos;s likely an available court at a venue ten minutes further away.
@@ -144,9 +135,9 @@ export default async function PlayTodayCityPage({ params }: Props) {
         </div>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
-          <a href="/play-today" className="card block text-center">
-            <div className="font-serif text-lg font-semibold tracking-tight">Check availability now</div>
-            <p className="mt-1 text-xs text-pm-faint">Live courts across the UK</p>
+          <a href="/find" className="card block text-center">
+            <div className="font-serif text-lg font-semibold tracking-tight">Find a court</div>
+            <p className="mt-1 text-xs text-pm-faint">Browse venues across the UK</p>
           </a>
           <a href={`/padel/${slug}`} className="card block text-center">
             <div className="font-serif text-lg font-semibold tracking-tight">All {cityName} venues</div>

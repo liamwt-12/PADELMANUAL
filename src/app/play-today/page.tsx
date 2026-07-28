@@ -1,15 +1,23 @@
 import type { Metadata } from 'next'
-import { getTopCities } from '@/lib/db'
-import PlayTodayClient from './PlayTodayClient'
+import UnavailableNotice from './UnavailableNotice'
 
 export const metadata: Metadata = {
-  title: 'Play Today — Find Available Padel Courts Now',
-  description: 'Find padel courts with slots available right now. Live availability from Playtomic across hundreds of UK venues.',
+  title: 'Play Today — Live Court Availability (Paused)',
+  description:
+    'Live padel court availability is currently unavailable on Padel Manual. Browse UK venues and book directly with each club.',
 }
 
-export default async function PlayTodayPage() {
-  const topCities = await getTopCities(20)
-  const cities = topCities.map(c => c.city)
+export default function PlayTodayPage() {
+  return (
+    <main className="pb-10">
+      <section className="pt-6 pb-8">
+        <h1 className="font-serif text-4xl font-bold tracking-tight md:text-5xl">Play Today</h1>
+        <p className="mt-3 max-w-md text-base leading-relaxed text-pm-muted">
+          Live court availability is paused.
+        </p>
+      </section>
 
-  return <PlayTodayClient cities={cities} />
+      <UnavailableNotice />
+    </main>
+  )
 }

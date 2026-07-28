@@ -30,40 +30,32 @@ export default async function Home() {
 
   return (
     <main className="pb-8">
-      {/* ── Play Today HERO ── */}
+      {/* ── Directory HERO ── */}
       <section className="pt-10 pb-12 md:pt-14 md:pb-16">
-        <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-pm-accent">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-pm-accent opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-pm-accent" />
-          </span>
-          Live availability
+        <div className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-pm-faint">
+          The modern guide to UK padel
         </div>
         <h1 className="mt-4 max-w-[760px] font-serif text-[40px] font-bold leading-[1.02] tracking-tight md:text-[68px]">
-          Find a padel court available right now.
+          Every padel court in the UK, in one place.
         </h1>
         <p className="mt-5 max-w-[520px] text-base leading-relaxed text-pm-muted md:text-lg">
-          Real-time slots from Playtomic across {venueCount}+ UK venues. The only UK padel
-          directory with live booking data — see what is bookable in the next hour, this
-          evening, or tomorrow.
+          {venueCount} venues and {courtTotal.toLocaleString()} courts across the UK — searchable by
+          city, postcode, or nearest station, each linking straight to the club&apos;s own booking
+          page.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <a
-            href="/play-today"
+            href="/find"
             className="group inline-flex items-center gap-2 rounded-full bg-pm-accent px-8 py-4 text-base font-semibold text-white shadow-lg shadow-pm-accent/20 transition-transform hover:scale-[1.02]"
           >
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
-            </span>
-            Play Today
+            Find a court
             <span className="transition-transform group-hover:translate-x-1" aria-hidden>→</span>
           </a>
           <a
-            href="/find"
+            href="/guides/find-padel-courts-near-me"
             className="text-sm font-medium text-pm-muted underline underline-offset-4 hover:text-pm-text transition-colors"
           >
-            Or browse all {venueCount} venues
+            New to padel? Start here
           </a>
         </div>
 
@@ -77,13 +69,6 @@ export default async function Home() {
             <div className="font-serif text-3xl md:text-4xl font-bold text-pm-text">{courtTotal.toLocaleString()}</div>
             <div className="text-xs text-pm-faint mt-0.5">courts</div>
           </div>
-          <a href="/play-today" className="group">
-            <div className="font-serif text-3xl md:text-4xl font-bold text-emerald-600 flex items-center gap-2 group-hover:text-emerald-700 transition-colors">
-              223
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-            <div className="text-xs text-pm-faint mt-0.5">with live availability</div>
-          </a>
         </div>
       </section>
 

@@ -378,6 +378,7 @@ export default async function ListingPage({ params }: Props) {
 
       {/* ── Report issue ── */}
       <section className="mt-12 pt-6 border-t border-pm-border/30 text-center">
+        <p className="mb-3 text-xs text-pm-faint">Listings last verified March 2026.</p>
         <ReportListingModal listingId={listing.id} venueName={listing.name} />
       </section>
 
