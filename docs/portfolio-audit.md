@@ -448,4 +448,56 @@ Stated plainly so the numbers above aren't over-read:
 
 ---
 
-*Read-only audit. No application code, configuration, database row or third-party setting was modified. A `supabase/` directory created transiently by `supabase link` during project enumeration was removed; the working tree is unchanged apart from this file and the pre-existing uncommitted edit to `src/app/api/play-today/route.ts`.*
+## G. Addendum — stop-the-bleeding session, 28 July 2026
+
+The verdict was taken as **mothball**. This section records what was actually changed, so the
+audit above is read as the "before" picture. Three commits: `22b2be2`, `422e8c7`, and the
+commit carrying this addendum.
+
+**Killed.** Cold outreach is off at three layers — `featured-venue` and `trial-followup`
+removed from `vercel.json`, all four outreach handlers replaced with 410 stubs containing no
+send logic, and the admin dashboard's manual "Send Outreach" and "Trigger featured venue"
+controls removed. The queued 2 Aug email to `theo2@padelsocial.club` was deleted from
+`outreach_log`; the pending queue is now empty. `/api/admin/send-demo` is deleted.
+`check-notifications` is disabled. Play Today now returns an explicit 503 unavailable state
+and the pages say live availability is paused rather than rendering "no courts available" as
+fact; the primary-CTA placement is gone from the homepage hero and the nav. The site-wide
+`alternates.canonical` is removed from the root layout, so pages emit their own canonical.
+19 junk listings were deleted (558 → 539), along with 13 orphan `outreach_log` rows, 16
+`content_enrichment_log` rows and the 2 cron-created placeholder `venue_owners` rows. Venue
+pages now carry "Listings last verified March 2026."
+
+**Corrections to §C2 — the RLS exposure was worse than reported.** The audit probed INSERT
+only and named 3 tables with RLS gaps. The true position was that **RLS was disabled outright
+on 7 tables** while `anon` held full `SELECT/INSERT/UPDATE/DELETE/TRUNCATE` grants — so the
+exposure included **deleting** data, not just inserting it. Most sharply: anyone could have
+wiped `outreach_optouts`, the email suppression list. A second root cause accounted for 4 more
+tables: policies named "Service role full access on *table*" had been created for `PUBLIC`
+rather than `service_role`, with `USING true` / `WITH CHECK true`. All 12 tables are now
+locked (migration `supabase/migrations/20260728090000_mothball_lock_down_anon_access.sql`),
+`venue_reviews.approved` defaults to `false`, and anon retains exactly one read — approved
+reviews, which `/[slug]` renders. Verified with the same anon-key probes: 12/12 blocked for
+write, 11/11 blocked for read, public site reads unaffected.
+
+**Still open — Liam's own actions, outside this session:**
+
+- Cancelling the £29/mo self-subscription in Stripe.
+- Restricting `GOOGLE_PLACES_API_KEY` in the Google Cloud console. The key is still
+  server-rendered into the public HTML of every venue page and was confirmed usable by an
+  arbitrary caller with no referrer. **Not yet verified as restricted.**
+
+**Known-open, accepted for now:**
+
+- Six guide pages still describe Play Today in the present tense as a live availability tool
+  ("shows you which courts near you have slots open right now"). The pages they link to now
+  say otherwise, so a reader gets the truth on arrival, but the prose is stale.
+- `authenticated` still holds broad table grants; RLS policies now gate it, but the grants
+  themselves were left as found.
+- The `venue_owners` table still contains ~20 cron-manufactured trial rows beyond the two
+  placeholder ones removed. They are inert now the cron is dead.
+
+---
+
+*The audit in §A–F was read-only: no application code, configuration, database row or
+third-party setting was modified while it was written. §G records the changes made in a
+subsequent session at the user's direction.*
